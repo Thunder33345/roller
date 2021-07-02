@@ -3,31 +3,29 @@ package ranker
 import "sort"
 
 type Processor interface {
-	Process(r RawPermissible, pr GroupProvider) (Permissible, error)
+	Process(r RawPermissionList, pr GroupProvider) (PermissionList, error)
 }
 
-type ProcessorFunc func(r RawPermissible, pr GroupProvider) (Permissible, error)
+type ProcessorFunc func(r RawPermissionList, pr GroupProvider) (PermissionList, error)
 
-func (p ProcessorFunc) Process(r RawPermissible, pr GroupProvider) (Permissible, error) {
+func (p ProcessorFunc) Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 	return p(r, pr)
 }
 
-type CachedProcessor interface {
-	ClearCache()
-	Process(uid string) (Permissible, error)
-	DirectProcess(uid string) (Permissible, error)
+type WrappedProcessor interface {
+	Process(uid string) (PermissionList, error)
 }
 
-func Process(r RawPermissible, pr GroupProvider) (Permissible, error) {
+func Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 	gs, err := pGroup(r.Groups, pr)
 	if err != nil {
-		return Permissible{}, err
+		return PermissionList{}, err
 	}
 	sort.Slice(gs, func(i, j int) bool {
 		return gs[i].Order > gs[j].Order
 	})
 
-	var p Permissible
+	var p PermissionList
 	for _, g := range gs {
 		p = pProcessSet(p, g.Default)
 	}
@@ -46,12 +44,12 @@ func pGroup(r []string, pr GroupProvider) ([]Group, error) {
 		}
 	}
 	if len(missing) > 0 {
-		return []Group{}, MissingGroups{groups: missing}
+		return []Group{}, MissingGroupsError{groups: missing}
 	}
 	return gs, nil
 }
 
-func pProcessSet(p Permissible, set PermissionSet) Permissible {
+func pProcessSet(p PermissionList, set PermissionEntry) PermissionList {
 	if l := set.Level; l != 0 {
 		p.Level = l
 	}
@@ -74,44 +72,44 @@ func pRemoveNodes(stack []string, needle []string) {
 	}
 }
 
-type ProcessorWithCache struct {
-	cache       map[string]Permissible
+type CachedProcessor struct {
+	cache       map[string]PermissionList
 	process     Processor
-	provider    Provider
+	provider    DataProvider
 	lastChanged int64
 }
 
-func (p *ProcessorWithCache) Process(uid string) (Permissible, error) {
+func (p *CachedProcessor) Process(uid string) (PermissionList, error) {
 	if c, ok := p.GetCache(uid); ok {
 		return c, nil
 	}
 	return p.DirectProcess(uid)
 }
 
-func (p *ProcessorWithCache) DirectProcess(uid string) (Permissible, error) {
-	r, e := p.provider.GetRawPermissible(uid)
+func (p *CachedProcessor) DirectProcess(uid string) (PermissionList, error) {
+	r, e := p.provider.GetRawPermission(uid)
 	if e != nil {
-		return Permissible{}, e
+		return PermissionList{}, e
 	}
 	return p.process.Process(r, p.provider)
 }
 
-func (p *ProcessorWithCache) GetCache(uid string) (Permissible, bool) {
+func (p *CachedProcessor) GetCache(uid string) (PermissionList, bool) {
 	if p.provider.LastChanged() > p.lastChanged {
 		p.ClearCache()
 		p.lastChanged = p.provider.LastChanged()
-		return Permissible{}, false
+		return PermissionList{}, false
 	}
 	if c, ok := p.cache[uid]; ok {
 		return c, true
 	}
-	return Permissible{}, false
+	return PermissionList{}, false
 }
 
-func (p *ProcessorWithCache) StoreCache(uid string, permissible Permissible) {
-	p.cache[uid] = permissible
+func (p *CachedProcessor) StoreCache(uid string, pl PermissionList) {
+	p.cache[uid] = pl
 }
 
-func (p *ProcessorWithCache) ClearCache() {
-	p.cache = map[string]Permissible{}
+func (p *CachedProcessor) ClearCache() {
+	p.cache = map[string]PermissionList{}
 }

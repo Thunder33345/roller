@@ -2,18 +2,18 @@ package ranker
 
 import "strings"
 
-type Judge interface {
-	HasPermission(p Permissible, node string) bool
-	HasPermissionWithLevel(p Permissible, node string, level int) bool
-	IsHigherLevel(source Permissible, subject Permissible) bool
+type Comparator interface {
+	HasPermission(p PermissionList, node string) bool
+	HasPermissionWithLevel(p PermissionList, node string, level int) bool
+	IsHigherLevel(source PermissionList, subject PermissionList) bool
 }
 
-var _ Judge = (*ExplicitJudge)(nil)
+var _ Comparator = (*ExplicitComparator)(nil)
 
-type ExplicitJudge struct {
+type ExplicitComparator struct {
 }
 
-func (j ExplicitJudge) HasPermission(p Permissible, node string) bool {
+func (j ExplicitComparator) HasPermission(p PermissionList, node string) bool {
 	for _, n := range p.Permission {
 		if n == node {
 			return true
@@ -22,25 +22,25 @@ func (j ExplicitJudge) HasPermission(p Permissible, node string) bool {
 	return false
 }
 
-func (j ExplicitJudge) HasPermissionWithLevel(p Permissible, node string, level int) bool {
+func (j ExplicitComparator) HasPermissionWithLevel(p PermissionList, node string, level int) bool {
 	if p.Level > level {
 		return false
 	}
 	return j.HasPermission(p, node)
 }
 
-func (j ExplicitJudge) IsHigherLevel(source Permissible, subject Permissible) bool {
+func (j ExplicitComparator) IsHigherLevel(source PermissionList, subject PermissionList) bool {
 	return source.Level > subject.Level
 }
 
-var _ Judge = (*ImplicitJudge)(nil)
+var _ Comparator = (*ImplicitComparator)(nil)
 
-type ImplicitJudge struct {
+type ImplicitComparator struct {
 	Deliminator string
 	Terminator  string
 }
 
-func (j ImplicitJudge) HasPermission(p Permissible, node string) bool {
+func (j ImplicitComparator) HasPermission(p PermissionList, node string) bool {
 	v := j.generateVariant(strings.Split(node, j.Deliminator))
 	for _, n := range p.Permission {
 		for _, sv := range v {
@@ -52,18 +52,18 @@ func (j ImplicitJudge) HasPermission(p Permissible, node string) bool {
 	return false
 }
 
-func (j ImplicitJudge) HasPermissionWithLevel(p Permissible, node string, level int) bool {
+func (j ImplicitComparator) HasPermissionWithLevel(p PermissionList, node string, level int) bool {
 	if p.Level > level {
 		return false
 	}
 	return j.HasPermission(p, node)
 }
 
-func (j ImplicitJudge) IsHigherLevel(source Permissible, subject Permissible) bool {
+func (j ImplicitComparator) IsHigherLevel(source PermissionList, subject PermissionList) bool {
 	return source.Level > subject.Level
 }
 
-func (j ImplicitJudge) generateVariant(exp []string) []string {
+func (j ImplicitComparator) generateVariant(exp []string) []string {
 	var o []string
 
 	for i := 0; i < len(exp); i++ {

@@ -2,30 +2,30 @@ package ranker
 
 import "fmt"
 
-var _ error = (*MissingGroups)(nil) // ensure MissingGroups implements error
+var _ error = (*MissingGroupsError)(nil) // ensure MissingGroupsError implements error
 
-type MissingGroups struct {
+type MissingGroupsError struct {
 	groups []string
 }
 
-func (e MissingGroups) Error() string {
+func (e MissingGroupsError) Error() string {
 	return fmt.Sprintf("Missing Group: %v", e.groups)
 }
 
-func (e MissingGroups) Groups() []string {
+func (e MissingGroupsError) Groups() []string {
 	return e.groups
 }
 
-var _ error = (*MissingPermissible)(nil) // ensure MissingPermissible implements error
+var _ error = (*ErrorMissingRawPermissionList)(nil) // ensure ErrorMissingRawPermissionList implements error
 
-type MissingPermissible struct {
+type ErrorMissingRawPermissionList struct {
 	uid string
 }
 
-func (e MissingPermissible) Error() string {
-	return fmt.Sprintf("Missing Permissible: %v", e.uid)
+func (e ErrorMissingRawPermissionList) Error() string {
+	return fmt.Sprintf("Missing PermissionList: %v", e.uid)
 }
 
-func (e MissingPermissible) UID() string {
+func (e ErrorMissingRawPermissionList) UID() string {
 	return e.uid
 }

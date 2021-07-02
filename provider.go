@@ -14,27 +14,27 @@ func (g GroupProviderFunc) GetGroup(uid string) (Group, bool) {
 	return g(uid)
 }
 
-type Provider interface {
-	GetRawPermissible(uid string) (RawPermissible, error)
+type DataProvider interface {
+	GetRawPermission(uid string) (RawPermissionList, error)
 	GetGroup(uid string) (Group, bool)
 	LastChanged() int64
 }
 
-var _ Provider = (*MemoryProvider)(nil)
+var _ DataProvider = (*MemoryProvider)(nil)
 
 type MemoryProvider struct {
 	groups      map[string]Group
-	raw         map[string]RawPermissible
-	defaultRaw  *RawPermissible
+	raw         map[string]RawPermissionList
+	defaultRaw  *RawPermissionList
 	lastChanged int64
 }
 
-func (p *MemoryProvider) GetRawPermissible(uid string) (RawPermissible, error) {
+func (p *MemoryProvider) GetRawPermission(uid string) (RawPermissionList, error) {
 	if r, ok := p.raw[uid]; ok {
 		return r, nil
 	}
 	if p.defaultRaw == nil {
-		return RawPermissible{}, MissingPermissible{uid: uid}
+		return RawPermissionList{}, ErrorMissingRawPermissionList{uid: uid}
 	}
 	return *p.defaultRaw, nil
 }
