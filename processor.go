@@ -18,11 +18,7 @@ type CachedProcessor interface {
 	DirectProcess(uid string) (Permissible, error)
 }
 
-func Process() Processor {
-	return ProcessorFunc(process)
-}
-
-func process(r RawPermissible, pr GroupProvider) (Permissible, error) {
+func Process(r RawPermissible, pr GroupProvider) (Permissible, error) {
 	gs, err := pGroup(r.Groups, pr)
 	if err != nil {
 		return Permissible{}, err
@@ -78,10 +74,9 @@ func pRemoveNodes(stack []string, needle []string) {
 	}
 }
 
-
 type ProcessorWithCache struct {
 	cache       map[string]Permissible
-	process     ProcessorFunc
+	process     Processor
 	provider    Provider
 	lastChanged int64
 }
@@ -98,7 +93,7 @@ func (p *ProcessorWithCache) DirectProcess(uid string) (Permissible, error) {
 	if e != nil {
 		return Permissible{}, e
 	}
-	return p.process(r, p.provider)
+	return p.process.Process(r, p.provider)
 }
 
 func (p *ProcessorWithCache) GetCache(uid string) (Permissible, bool) {
