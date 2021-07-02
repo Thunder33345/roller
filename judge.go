@@ -2,6 +2,12 @@ package ranker
 
 import "strings"
 
+type Judge interface {
+	HasPermission(p Permissible, node string) bool
+	HasPermissionWithLevel(p Permissible, node string, level int) bool
+	IsHigherLevel(source Permissible, subject Permissible) bool
+}
+
 var _ Judge = (*ExplicitJudge)(nil)
 
 type ExplicitJudge struct {
