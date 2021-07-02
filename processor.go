@@ -2,9 +2,9 @@ package ranker
 
 import "sort"
 
-func pGroup(r []UID, pr GroupProvider) ([]Group, error) {
+func pGroup(r []string, pr GroupProvider) ([]Group, error) {
 	var gs []Group
-	var missing []UID
+	var missing []string
 	for _, uid := range r {
 		if v, ok := pr.GetGroup(uid); ok {
 			gs = append(gs, v)
@@ -44,7 +44,7 @@ func pProcessSet(p Permissible, set PermissionSet) Permissible {
 		p.Level = l
 	}
 	if set.EmptySet {
-		p.Permission = Nodes{}
+		p.Permission = []string{}
 	} else {
 		pRemoveNodes(p.Permission, set.Revoke)
 	}
@@ -52,7 +52,7 @@ func pProcessSet(p Permissible, set PermissionSet) Permissible {
 	return p
 }
 
-func pRemoveNodes(stack Nodes, needle Nodes) {
+func pRemoveNodes(stack []string, needle []string) {
 	for i, s := range stack {
 		for _, r := range needle {
 			if s == r {

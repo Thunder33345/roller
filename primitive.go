@@ -1,18 +1,5 @@
 package ranker
 
-//Level is the numerical representation if hierarchy
-//A higher number(100) power level will overrule a lower number(1)
-//In context of ContextPermissionSet: A 0 will inherit group's default
-//In context of Group: A 0 will inherit a previous group's value
-type Level int
-
-//Nodes is a slice of permission nodes
-type Nodes []string
-
-
-//UID is a unique identifier given for a certain group
-type UID string
-
 //Group represent a collection of permissions and metadata
 type Group struct {
 	//Name is a display friendly name of the group, it should only be used for display, it has no filtering or requirement
@@ -20,7 +7,7 @@ type Group struct {
 	//RefName is a command friendly runtime name, should be unique
 	RefName string
 	//UID is the unique identifier for this group used for saving and referencing, should never be changed
-	UID UID
+	UID string
 	//Order dictates the overwrite precedent, where largest gets overwritten by smallest, must be unique
 	Order int
 	//Default is the default permission that is used
@@ -40,12 +27,13 @@ type PermissionSet struct {
 	EmptySet bool
 	//Level is the default power level of said entry
 	//Only the last group's level is in used, and context level overwrites group
-	Level Level
+	//if 0, the last value will be used instead
+	Level int
 	//Grants will give(or overwrite) a permission by
 	//string will be the key of the permission
-	Grants Nodes
+	Grants []string
 	//Revoke will remove any permissions that is granted by a prior group
-	Revoke Nodes
+	Revoke []string
 }
 
 //ContextPermissionSet represent a collection of permission with extra flags only valid in context
@@ -65,13 +53,13 @@ type RawPermissible struct {
 	//Will overwrite all group based permissions
 	Overwrites PermissionSet
 	//Groups are a list of p_group to inherit permission from
-	Groups []UID
+	Groups []string
 }
 
 //Permissible is the compiled result from a RawPermissible
 type Permissible struct {
 	//Level is the final applicable level
-	Level Level
+	Level int
 	//Permission is th final applicable permission
-	Permission Nodes
+	Permission []string
 }

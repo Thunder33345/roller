@@ -16,7 +16,7 @@ func (j ExplicitJudge) HasPermission(p Permissible, node string) bool {
 	return false
 }
 
-func (j ExplicitJudge) HasPermissionWithLevel(p Permissible, node string, level Level) bool {
+func (j ExplicitJudge) HasPermissionWithLevel(p Permissible, node string, level int) bool {
 	if p.Level > level {
 		return false
 	}
@@ -46,7 +46,7 @@ func (j ImplicitJudge) HasPermission(p Permissible, node string) bool {
 	return false
 }
 
-func (j ImplicitJudge) HasPermissionWithLevel(p Permissible, node string, level Level) bool {
+func (j ImplicitJudge) HasPermissionWithLevel(p Permissible, node string, level int) bool {
 	if p.Level > level {
 		return false
 	}

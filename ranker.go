@@ -14,7 +14,7 @@ func (r *Ranker) HasPermission(p Permissible, node string) bool {
 	return r.judge.HasPermission(p, node)
 }
 
-func (r *Ranker) HasPermissionWithLevel(p Permissible, node string, level Level) bool {
+func (r *Ranker) HasPermissionWithLevel(p Permissible, node string, level int) bool {
 	return r.judge.HasPermissionWithLevel(p, node, level)
 }
 
