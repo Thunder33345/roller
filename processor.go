@@ -74,7 +74,7 @@ func pRemoveNodes(stack []string, needle []string) {
 
 type CachedProcessor struct {
 	cache       map[string]PermissionList
-	process     Processor
+	processor   Processor
 	provider    DataProvider
 	lastChanged int64
 }
@@ -91,7 +91,7 @@ func (p *CachedProcessor) DirectProcess(uid string) (PermissionList, error) {
 	if e != nil {
 		return PermissionList{}, e
 	}
-	return p.process.Process(r, p.provider)
+	return p.processor.Process(r, p.provider)
 }
 
 func (p *CachedProcessor) GetCache(uid string) (PermissionList, bool) {
