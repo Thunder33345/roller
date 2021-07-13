@@ -12,10 +12,6 @@ func (p ProcessorFunc) Process(r RawPermissionList, pr GroupProvider) (Permissio
 	return p(r, pr)
 }
 
-type WrappedProcessor interface {
-	Process(uid string) (PermissionList, error)
-}
-
 func Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 	gs, err := pGroup(r.Groups, pr)
 	if err != nil {
@@ -70,46 +66,4 @@ func pRemoveNodes(stack []string, needle []string) {
 			}
 		}
 	}
-}
-
-type CachedProcessor struct {
-	cache       map[string]PermissionList
-	processor   Processor
-	provider    DataProvider
-	lastChanged int64
-}
-
-func (p *CachedProcessor) Process(uid string) (PermissionList, error) {
-	if c, ok := p.GetCache(uid); ok {
-		return c, nil
-	}
-	return p.DirectProcess(uid)
-}
-
-func (p *CachedProcessor) DirectProcess(uid string) (PermissionList, error) {
-	r, e := p.provider.GetRawPermission(uid)
-	if e != nil {
-		return PermissionList{}, e
-	}
-	return p.processor.Process(r, p.provider)
-}
-
-func (p *CachedProcessor) GetCache(uid string) (PermissionList, bool) {
-	if p.provider.LastChanged() > p.lastChanged {
-		p.ClearCache()
-		p.lastChanged = p.provider.LastChanged()
-		return PermissionList{}, false
-	}
-	if c, ok := p.cache[uid]; ok {
-		return c, true
-	}
-	return PermissionList{}, false
-}
-
-func (p *CachedProcessor) StoreCache(uid string, pl PermissionList) {
-	p.cache[uid] = pl
-}
-
-func (p *CachedProcessor) ClearCache() {
-	p.cache = map[string]PermissionList{}
 }

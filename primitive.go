@@ -45,20 +45,3 @@ type PermissionList struct {
 	//Permission is th final applicable permission
 	Permission []string
 }
-
-type WrappedPermissionList struct {
-	permissible PermissionList
-	judge       Comparator
-}
-
-func (w WrappedPermissionList) HasPermission(node string) bool {
-	return w.judge.HasPermission(w.permissible, node)
-}
-
-func (w WrappedPermissionList) HasPermissionWithLevel(node string, level int) bool {
-	return w.judge.HasPermissionWithLevel(w.permissible, node, level)
-}
-
-func (w WrappedPermissionList) IsHigherLevel(subject PermissionList) bool {
-	return w.judge.IsHigherLevel(w.permissible, subject)
-}
