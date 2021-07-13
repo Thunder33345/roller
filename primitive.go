@@ -10,15 +10,8 @@ type Group struct {
 	UID string
 	//Order dictates the overwrite precedent, where largest gets overwritten by smallest, must be unique
 	Order int
-	//Default is the default permission that is used
-	Default PermissionEntry
-	//Context is permissions that are only applicable in certain context
-	//Where string will be the identifier of the context
-	//Unless context have ContextPermissionSet.IgnoreDefault set to true, group permission will be inherited
-	//Context map[string]ContextPermissionSet
-	//ContextFallback will be used if Context is not found
-	//If this is included, it will always have the highest precedence
-	//ContextFallback ContextPermissionSet
+	//Permission is the permission that is used
+	Permission PermissionEntry
 }
 
 //PermissionEntry represent a collection of permissions and flags
@@ -35,17 +28,6 @@ type PermissionEntry struct {
 	//Revoke will remove any permissions that is granted by a prior group
 	Revoke []string
 }
-
-//ContextPermissionSet represent a collection of permission with extra flags only valid in context
-//type ContextPermissionSet struct {
-//	//PermissionEntry embeds the default set
-//	PermissionEntry
-//	//IgnoreDefault will ignore the default group permission for this context
-//	IgnoreDefault bool
-//	//Order is used when merging multiple context, must be unique
-//	//When overwriting precedent is based on largest to smallest
-//	Order int
-//}
 
 //RawPermissionList is the raw save state for PermissionList
 type RawPermissionList struct {

@@ -27,7 +27,7 @@ func Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 
 	var p PermissionList
 	for _, g := range gs {
-		p = pProcessSet(p, g.Default)
+		p = pProcessSet(p, g.Permission)
 	}
 	p = pProcessSet(p, r.Overwrites)
 	return p, nil
