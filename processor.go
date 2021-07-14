@@ -1,4 +1,4 @@
-package ranker
+package perms_manager
 
 import "sort"
 

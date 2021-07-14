@@ -1,4 +1,4 @@
-package ranker
+package perms_manager
 
 //Group represent a collection of permissions and metadata
 type Group struct {

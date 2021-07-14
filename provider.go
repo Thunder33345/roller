@@ -1,4 +1,4 @@
-package ranker
+package perms_manager
 
 //GroupProvider is something that's capable of providing a permission group
 type GroupProvider interface {
