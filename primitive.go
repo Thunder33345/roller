@@ -22,9 +22,9 @@ type Entry struct {
 	//Only the last group's level is in used, and context level overwrites group
 	//if 0, the last value will be used instead
 	Level int
-	//Grant will add a permission
+	//Grant will add permissions to the List
 	Grant []string
-	//Revoke will subtract a permissions that is granted by a prior group
+	//Revoke will revoke a permissions that is granted to the List by a prior group
 	Revoke []string
 }
 
