@@ -54,7 +54,7 @@ func pProcessSet(p PermissionList, set PermissionEntry) PermissionList {
 	} else {
 		pRemoveNodes(p.Permission, set.Revoke)
 	}
-	p.Permission = append(p.Permission, set.Grants...)
+	p.Permission = append(p.Permission, set.Grant...)
 	return p
 }
 
