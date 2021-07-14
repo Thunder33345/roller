@@ -4,28 +4,28 @@ import "sort"
 
 //Processor is something that can compile a raw permission list with a given group provider
 type Processor interface {
-	Process(r RawPermissionList, pr GroupProvider) (PermissionList, error)
+	Process(r RawList, pr GroupProvider) (List, error)
 }
 
-type ProcessorFunc func(r RawPermissionList, pr GroupProvider) (PermissionList, error)
+type ProcessorFunc func(r RawList, pr GroupProvider) (List, error)
 
 var _ Processor = (*ProcessorFunc)(nil)
 
-func (p ProcessorFunc) Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
+func (p ProcessorFunc) Process(r RawList, pr GroupProvider) (List, error) {
 	return p(r, pr)
 }
 
 //Process is the default built in permission list processing method
-func Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
+func Process(r RawList, pr GroupProvider) (List, error) {
 	gs, err := pGroup(r.Groups, pr)
 	if err != nil {
-		return PermissionList{}, err
+		return List{}, err
 	}
 	sort.Slice(gs, func(i, j int) bool {
 		return gs[i].Order > gs[j].Order
 	})
 
-	var p PermissionList
+	var p List
 	for _, g := range gs {
 		p = pProcessSet(p, g.Permission)
 	}
@@ -49,7 +49,7 @@ func pGroup(r []string, pr GroupProvider) ([]Group, error) {
 	return gs, nil
 }
 
-func pProcessSet(p PermissionList, set PermissionEntry) PermissionList {
+func pProcessSet(p List, set Entry) List {
 	if l := set.Level; l != 0 {
 		p.Level = l
 	}

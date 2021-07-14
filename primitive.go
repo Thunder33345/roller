@@ -11,11 +11,11 @@ type Group struct {
 	//Order dictates the overwrite precedent, where largest gets overwritten by smallest, must be unique
 	Order int
 	//Permission is the permission that is used
-	Permission PermissionEntry
+	Permission Entry
 }
 
-//PermissionEntry represent a collection of permissions and flags
-type PermissionEntry struct {
+//Entry represent a collection of permissions and flags
+type Entry struct {
 	//EmptySet will discard all previously granted permissions
 	EmptySet bool
 	//Level is the default power level of said entry
@@ -28,17 +28,17 @@ type PermissionEntry struct {
 	Revoke []string
 }
 
-//RawPermissionList is the raw save state for PermissionList
-type RawPermissionList struct {
+//RawList is the raw save state for List
+type RawList struct {
 	//Overwrites has the highest precedent
 	//Will overwrite all group based permissions
-	Overwrites PermissionEntry
+	Overwrites Entry
 	//Groups are a list of p_group to inherit permission from
 	Groups []string
 }
 
-//PermissionList is the compiled result from a RawPermissionList
-type PermissionList struct {
+//List is the compiled result from a RawList
+type List struct {
 	//Level is the final applicable level
 	Level int
 	//Permission is th final applicable permission

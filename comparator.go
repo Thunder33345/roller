@@ -4,23 +4,23 @@ import "strings"
 
 //Comparator is an interface for something that is able to compare permission
 type Comparator interface {
-	//HasPermission returns true if the PermissionList given has said permission node
-	HasPermission(p PermissionList, node string) bool
-	//HasPermissionWithLevel returns true if PermissionList has a permission, and also met the level requirement
+	//HasPermission returns true if the List given has said permission node
+	HasPermission(p List, node string) bool
+	//HasPermissionWithLevel returns true if List has a permission, and also met the level requirement
 	//comparison method using >= or > is up to implementor
-	HasPermissionWithLevel(p PermissionList, node string, level int) bool
-	//IsHigherLevel compares if source PermissionList is higher then subject PermissionList
+	HasPermissionWithLevel(p List, node string, level int) bool
+	//IsHigherLevel compares if source List is higher then subject List
 	//returns true if source is higher
-	IsHigherLevel(source PermissionList, subject PermissionList) bool
+	IsHigherLevel(source List, subject List) bool
 }
 
 //SelfComparator an interface for something that's capable of comparing itself
-//by holding it's own PermissionList and Comparator
+//by holding it's own List and Comparator
 //this is not used anywhere in the lib except to serve as an generic interface that can be used in other libraries
 type SelfComparator interface {
 	HasPermission(node string) bool
 	HasPermissionWithLevel(node string, level int) bool
-	IsHigherLevel(subject PermissionList) bool
+	IsHigherLevel(subject List) bool
 }
 
 //Insures that ExplicitComparator is Comparator
@@ -31,8 +31,8 @@ var _ Comparator = (*ExplicitComparator)(nil)
 type ExplicitComparator struct {
 }
 
-//HasPermission checks if PermissionList has the exact node
-func (j ExplicitComparator) HasPermission(p PermissionList, node string) bool {
+//HasPermission checks if List has the exact node
+func (j ExplicitComparator) HasPermission(p List, node string) bool {
 	for _, n := range p.Permission {
 		if n == node {
 			return true
@@ -41,14 +41,14 @@ func (j ExplicitComparator) HasPermission(p PermissionList, node string) bool {
 	return false
 }
 
-func (j ExplicitComparator) HasPermissionWithLevel(p PermissionList, node string, level int) bool {
+func (j ExplicitComparator) HasPermissionWithLevel(p List, node string, level int) bool {
 	if p.Level >= level {
 		return false
 	}
 	return j.HasPermission(p, node)
 }
 
-func (j ExplicitComparator) IsHigherLevel(source PermissionList, subject PermissionList) bool {
+func (j ExplicitComparator) IsHigherLevel(source List, subject List) bool {
 	return source.Level > subject.Level
 }
 
@@ -74,7 +74,7 @@ type ImplicitComparator struct {
 //HasPermission checks if a list has a certain permission
 //Checking for foo.bar will result in variations of parent node to be generated and checked against
 //It would check if the list have foo*, foo.bar* or foo.bar
-func (j ImplicitComparator) HasPermission(p PermissionList, node string) bool {
+func (j ImplicitComparator) HasPermission(p List, node string) bool {
 	v := j.generateVariant(node)
 	for _, n := range p.Permission {
 		for _, sv := range v {
@@ -86,14 +86,14 @@ func (j ImplicitComparator) HasPermission(p PermissionList, node string) bool {
 	return false
 }
 
-func (j ImplicitComparator) HasPermissionWithLevel(p PermissionList, node string, level int) bool {
+func (j ImplicitComparator) HasPermissionWithLevel(p List, node string, level int) bool {
 	if p.Level >= level {
 		return false
 	}
 	return j.HasPermission(p, node)
 }
 
-func (j ImplicitComparator) IsHigherLevel(source PermissionList, subject PermissionList) bool {
+func (j ImplicitComparator) IsHigherLevel(source List, subject List) bool {
 	return source.Level > subject.Level
 }
 
