@@ -14,6 +14,15 @@ type Comparator interface {
 	IsHigherLevel(source PermissionList, subject PermissionList) bool
 }
 
+//SelfComparator an interface for something that's capable of comparing itself
+//by holding it's own PermissionList and Comparator
+//this is not used anywhere in the lib except to serve as an generic interface that can be used in other libraries
+type SelfComparator interface {
+	HasPermission(node string) bool
+	HasPermissionWithLevel(node string, level int) bool
+	IsHigherLevel(subject PermissionList) bool
+}
+
 //Insures that ExplicitComparator is Comparator
 var _ Comparator = (*ExplicitComparator)(nil)
 
