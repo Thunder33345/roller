@@ -2,22 +2,24 @@ package perms_manager
 
 import "sort"
 
-//Processor is something that can compile a raw permission list with a given group provider
+//Processor is something that processes RawList List and Group
+//Processor defines the rule set of how something get processed
 type Processor interface {
-	Process(r RawList, pr GroupProvider) (List, error)
+	//Process generates a List out of RawList, returns error if there's any problem
+	Process(r RawList) (List, error)
+	//MergeEntry merges List with a list of Entry to generate a new RawList
+	MergeEntry(l List, es ...Entry) List
 }
 
-type ProcessorFunc func(r RawList, pr GroupProvider) (List, error)
-
-var _ Processor = (*ProcessorFunc)(nil)
-
-func (p ProcessorFunc) Process(r RawList, pr GroupProvider) (List, error) {
-	return p(r, pr)
+type BasicProcessor struct {
+	Provider GroupProvider
 }
 
-//Process is the default built in permission list processing method
-func Process(r RawList, pr GroupProvider) (List, error) {
-	gs, err := pGroup(r.Groups, pr)
+func NewProcessor(provider GroupProvider) BasicProcessor {
+	return BasicProcessor{Provider: provider}
+}
+func (p BasicProcessor) Process(r RawList) (List, error) {
+	gs, err := p.getGroups(r.Groups)
 	if err != nil {
 		return List{}, err
 	}
@@ -25,19 +27,26 @@ func Process(r RawList, pr GroupProvider) (List, error) {
 		return gs[i].Order > gs[j].Order
 	})
 
-	var p List
+	var l List
 	for _, g := range gs {
-		p = pProcessSet(p, g.Permission)
+		l = p.processSet(l, g.Permission)
 	}
-	p = pProcessSet(p, r.Overwrites)
-	return p, nil
+	l = p.processSet(l, r.Overwrites)
+	return l, nil
 }
 
-func pGroup(r []string, pr GroupProvider) ([]Group, error) {
+func (p BasicProcessor) MergeEntry(l List, es ...Entry) List {
+	for _, e := range es {
+		l = p.processSet(l, e)
+	}
+	return l
+}
+
+func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 	var gs []Group
 	var missing []string
 	for _, uid := range r {
-		if v, ok := pr.GetGroup(uid); ok {
+		if v, ok := p.Provider.GetGroup(uid); ok {
 			gs = append(gs, v)
 		} else {
 			missing = append(missing, uid)
@@ -49,20 +58,20 @@ func pGroup(r []string, pr GroupProvider) ([]Group, error) {
 	return gs, nil
 }
 
-func pProcessSet(p List, set Entry) List {
-	if l := set.Level; l != 0 {
-		p.Level = l
+func (p BasicProcessor) processSet(l List, set Entry) List {
+	if lv := set.Level; lv != 0 {
+		l.Level = lv
 	}
 	if set.EmptySet {
-		p.Permission = []string{}
+		l.Permission = []string{}
 	} else {
-		pRemoveNodes(p.Permission, set.Revoke)
+		p.removeNodes(l.Permission, set.Revoke)
 	}
-	p.Permission = append(p.Permission, set.Grant...)
-	return p
+	l.Permission = append(l.Permission, set.Grant...)
+	return l
 }
 
-func pRemoveNodes(stack []string, needle []string) {
+func (p BasicProcessor) removeNodes(stack []string, needle []string) {
 	for i, s := range stack {
 		for _, r := range needle {
 			if s == r {
