@@ -33,7 +33,7 @@ type RawList struct {
 	//Overwrites has the highest precedent
 	//Will overwrite all group based permissions
 	Overwrites Entry
-	//Groups are a list of p_group to inherit permission from
+	//Groups are a list of group UUID to inherit permission from
 	Groups []string
 }
 
