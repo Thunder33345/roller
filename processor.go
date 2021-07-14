@@ -2,16 +2,20 @@ package ranker
 
 import "sort"
 
+//Processor is something that can compile a raw permission list with a given group provider
 type Processor interface {
 	Process(r RawPermissionList, pr GroupProvider) (PermissionList, error)
 }
 
 type ProcessorFunc func(r RawPermissionList, pr GroupProvider) (PermissionList, error)
 
+var _ Processor = (*ProcessorFunc)(nil)
+
 func (p ProcessorFunc) Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 	return p(r, pr)
 }
 
+//Process is the default built in permission list processing method
 func Process(r RawPermissionList, pr GroupProvider) (PermissionList, error) {
 	gs, err := pGroup(r.Groups, pr)
 	if err != nil {
