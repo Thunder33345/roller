@@ -42,7 +42,7 @@ func (j ExplicitComparator) HasPermission(p List, node string) bool {
 }
 
 func (j ExplicitComparator) HasPermissionWithLevel(p List, node string, level int) bool {
-	if p.Level >= level {
+	if level > p.Level {
 		return false
 	}
 	return j.HasPermission(p, node)
@@ -87,7 +87,7 @@ func (j ImplicitComparator) HasPermission(p List, node string) bool {
 }
 
 func (j ImplicitComparator) HasPermissionWithLevel(p List, node string, level int) bool {
-	if p.Level >= level {
+	if level > p.Level {
 		return false
 	}
 	return j.HasPermission(p, node)
