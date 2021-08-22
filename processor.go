@@ -59,8 +59,12 @@ func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 }
 
 func (p BasicProcessor) processSet(l List, set Entry) List {
-	if lv := set.Level; lv != 0 {
-		l.Level = lv
+	if lv := set.Level; !set.IgnoreLevel {
+		if set.AddLevel {
+			l.Level += lv
+		} else {
+			l.Level = lv
+		}
 	}
 	if set.EmptySet {
 		l.Permission = []string{}

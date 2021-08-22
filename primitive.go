@@ -19,9 +19,12 @@ type Entry struct {
 	//EmptySet will discard all previously granted permissions
 	EmptySet bool
 	//Level is the default power level of said entry
-	//Only the last group's level is in used, and context level overwrites group
-	//if 0, the last value will be used instead
+	//Only the highest group's level is in used
 	Level int
+	//IgnoreLevel makes this entry's Level ignored
+	IgnoreLevel bool
+	//AddLevel makes Level add or subtract from last level
+	AddLevel bool
 	//Grant will add permissions to the List
 	Grant []string
 	//Revoke will revoke a permissions that is granted to the List by a prior group
