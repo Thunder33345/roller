@@ -7,9 +7,13 @@ import "sort"
 type Processor interface {
 	//Process generates a List out of RawList, returns error if there's any problem
 	Process(r RawList) (List, error)
+	//ProcessFlags generates a List out of RawList with flags included, returns error if there's any problem
+	ProcessFlags(r RawList, flags []string) (List, error)
 	//MergeEntry merges List with a list of Entry to generate a new RawList
 	MergeEntry(l List, es ...Entry) List
 }
+
+var _ Processor = (*BasicProcessor)(nil)
 
 type BasicProcessor struct {
 	Provider      GroupProvider
