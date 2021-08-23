@@ -12,24 +12,75 @@ type Processor interface {
 }
 
 type BasicProcessor struct {
-	Provider GroupProvider
+	Provider      GroupProvider
+	SmallestFirst bool
 }
 
 func NewProcessor(provider GroupProvider) BasicProcessor {
 	return BasicProcessor{Provider: provider}
 }
+
+func (p BasicProcessor) compare(i, j int) bool {
+	if p.SmallestFirst {
+		return i < j
+	}
+	return i > j
+}
+
 func (p BasicProcessor) Process(r RawList) (List, error) {
 	gs, err := p.getGroups(r.Groups)
 	if err != nil {
 		return List{}, err
 	}
 	sort.Slice(gs, func(i, j int) bool {
-		return gs[i].Order > gs[j].Order
+		return p.compare(gs[i].Weight, gs[j].Weight)
 	})
 
 	var l List
 	for _, g := range gs {
 		l = p.processSet(l, g.Permission)
+	}
+	l = p.processSet(l, r.Overwrites)
+	return l, nil
+}
+
+func (p BasicProcessor) ProcessFlags(r RawList, flags []string) (List, error) {
+	gs, err := p.getGroups(r.Groups)
+	if err != nil {
+		return List{}, err
+	}
+	sort.Slice(gs, func(i, j int) bool {
+		return p.compare(gs[i].Weight, gs[j].Weight)
+	})
+
+	var l List
+	for _, g := range gs {
+		var fl []FlagEntry
+		if len(g.Flags) > 0 {
+			var fs []FlagEntry
+			for _, v := range flags {
+				sf, ok := g.Flags[v]
+				if !ok {
+					continue
+				}
+				fs = append(fs, sf)
+			}
+
+			sort.Slice(fs, func(i, j int) bool {
+				return p.compare(fs[i].Weight, fs[j].Weight)
+			})
+			for _, v := range fs {
+				if v.Preprocess {
+					l = p.processSet(l, v.Entry)
+				} else {
+					fl = append(fl, v)
+				}
+			}
+		}
+		l = p.processSet(l, g.Permission)
+		for _, v := range fl {
+			l = p.processSet(l, v.Entry)
+		}
 	}
 	l = p.processSet(l, r.Overwrites)
 	return l, nil

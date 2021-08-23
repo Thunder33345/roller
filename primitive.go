@@ -8,10 +8,13 @@ type Group struct {
 	RefName string
 	//UID is the unique identifier for this group used for saving and referencing, must never be changed
 	UID string
-	//Order dictates the overwrite precedent, where largest gets overwritten by smallest, must be unique
-	Order int
+	//Weight dictates the overwriting precedent, where the larger overwrites the smaller
+	//must be unique, otherwise behaviour is undefined
+	Weight int
 	//Permission is the permission that is used
 	Permission Entry
+	//Flags are conditional Entry that only applies in certain situations
+	Flags map[string]FlagEntry
 }
 
 //Entry represent a collection of permissions and flags
@@ -29,6 +32,17 @@ type Entry struct {
 	Grant []string
 	//Revoke will revoke a permissions that is granted to the List by a prior group
 	Revoke []string
+}
+
+//FlagEntry is an Entry but inside a Group.Flags
+//its same as Entry byt with extra flag only fields
+type FlagEntry struct {
+	//Weight dictates the overwriting precedent, where the larger overwrites the smaller
+	//must be unique, otherwise behaviour is undefined
+	Weight int
+	//Preprocess indicates that this should be processed before Group.Permission
+	Preprocess bool
+	Entry
 }
 
 //RawList is the raw save state for List
