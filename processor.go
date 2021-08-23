@@ -8,7 +8,7 @@ type Processor interface {
 	//Process generates a List out of RawList, returns error if there's any problem
 	Process(r RawList) (List, error)
 	//ProcessFlags generates a List out of RawList with flags included, returns error if there's any problem
-	ProcessFlags(r RawList, flags []string) (List, error)
+	ProcessFlags(r RawList, flags ...string) (List, error)
 	//MergeEntry merges List with a list of Entry to generate a new RawList
 	MergeEntry(l List, es ...Entry) List
 }
@@ -48,7 +48,7 @@ func (p BasicProcessor) Process(r RawList) (List, error) {
 	return l, nil
 }
 
-func (p BasicProcessor) ProcessFlags(r RawList, flags []string) (List, error) {
+func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 	gs, err := p.getGroups(r.Groups)
 	if err != nil {
 		return List{}, err
@@ -115,10 +115,10 @@ func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 
 func (p BasicProcessor) processSet(l List, set Entry) List {
 	if lv := set.Level; !set.IgnoreLevel {
-		if set.AddLevel {
-			l.Level += lv
-		} else {
+		if set.SetLevel {
 			l.Level = lv
+		} else {
+			l.Level += lv
 		}
 	}
 	if set.EmptySet {

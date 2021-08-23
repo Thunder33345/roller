@@ -26,8 +26,8 @@ type Entry struct {
 	Level int
 	//IgnoreLevel makes this entry's Level ignored
 	IgnoreLevel bool
-	//AddLevel makes Level add or subtract from last level
-	AddLevel bool
+	//SetLevel makes overwrites the Level instead of adding or subtracting from last level
+	SetLevel bool
 	//Grant will add permissions to the List
 	Grant []string
 	//Revoke will revoke a permissions that is granted to the List by a prior group
