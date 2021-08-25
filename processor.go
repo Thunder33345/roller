@@ -1,6 +1,8 @@
 package perms_manager
 
-import "sort"
+import (
+	"sort"
+)
 
 //Processor is something that processes RawList List and Group
 //Processor defines the rule set of how something get processed
@@ -16,8 +18,10 @@ type Processor interface {
 var _ Processor = (*BasicProcessor)(nil)
 
 type BasicProcessor struct {
-	Provider      GroupProvider
-	SmallestFirst bool
+	Provider GroupProvider
+	//WeightAscending controls whether smaller or bigger number holds precedent
+	//by default the larger will overwrite the smaller
+	WeightAscending bool
 }
 
 func NewProcessor(provider GroupProvider) BasicProcessor {
@@ -25,10 +29,10 @@ func NewProcessor(provider GroupProvider) BasicProcessor {
 }
 
 func (p BasicProcessor) compare(i, j int) bool {
-	if p.SmallestFirst {
-		return i < j
+	if p.WeightAscending {
+		return i > j
 	}
-	return i > j
+	return i < j
 }
 
 func (p BasicProcessor) Process(r RawList) (List, error) {
@@ -123,19 +127,28 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 	}
 	if set.EmptySet {
 		l.Permission = []string{}
-	} else {
-		p.removeNodes(l.Permission, set.Revoke)
+	} else if len(set.Revoke) > 0 {
+		l.Permission = p.removeNodes(l.Permission, set.Revoke)
 	}
 	l.Permission = append(l.Permission, set.Grant...)
 	return l
 }
 
-func (p BasicProcessor) removeNodes(stack []string, needle []string) {
-	for i, s := range stack {
+//removeNodes removes needle inside of stack
+func (p BasicProcessor) removeNodes(stack []string, needle []string) []string {
+	check := func(v string) bool {
 		for _, r := range needle {
-			if s == r {
-				stack = stack[i-1 : i+1]
+			if v == r {
+				return false
 			}
 		}
+		return true
 	}
+	var ret []string
+	for _, v := range stack {
+		if check(v) {
+			ret = append(ret, v)
+		}
+	}
+	return ret
 }

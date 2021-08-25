@@ -37,8 +37,8 @@ type Entry struct {
 //FlagEntry is an Entry but inside a Group.Flags
 //its same as Entry byt with extra flag only fields
 type FlagEntry struct {
-	//Weight dictates the overwriting precedent, where the larger overwrites the smaller
-	//must be unique, otherwise behaviour is undefined
+	//Weight dictates the overwriting precedent, must be unique, otherwise behaviour is undefined
+	//behaviour is defined by processor
 	Weight int
 	//Preprocess indicates that this should be processed before Group.Permission
 	Preprocess bool
