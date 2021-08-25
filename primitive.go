@@ -24,8 +24,6 @@ type Entry struct {
 	//Level is the default power level of said entry
 	//Only the highest group's level is in used
 	Level int
-	//IgnoreLevel makes this entry's Level ignored
-	IgnoreLevel bool
 	//SetLevel makes overwrites the Level instead of adding or subtracting from last level
 	SetLevel bool
 	//Grant will add permissions to the List

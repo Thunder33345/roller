@@ -118,13 +118,12 @@ func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 }
 
 func (p BasicProcessor) processSet(l List, set Entry) List {
-	if lv := set.Level; !set.IgnoreLevel {
-		if set.SetLevel {
-			l.Level = lv
-		} else {
-			l.Level += lv
-		}
+	if set.SetLevel {
+		l.Level = set.Level
+	} else {
+		l.Level += set.Level
 	}
+
 	if set.EmptySet {
 		l.Permission = []string{}
 	} else if len(set.Revoke) > 0 {
