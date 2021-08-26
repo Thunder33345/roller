@@ -133,7 +133,8 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 	return l
 }
 
-//removeNodes removes needle inside of stack
+//removeNodes removes needles from a specified stack,
+//inputs will not be altered and are assumed to be nonzero length slices
 func (p BasicProcessor) removeNodes(stack []string, needle []string) []string {
 	check := func(v string) bool {
 		for _, r := range needle {
@@ -143,7 +144,7 @@ func (p BasicProcessor) removeNodes(stack []string, needle []string) []string {
 		}
 		return true
 	}
-	var ret []string
+	ret := make([]string, 0, len(stack))
 	for _, v := range stack {
 		if check(v) {
 			ret = append(ret, v)
