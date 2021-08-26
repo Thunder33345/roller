@@ -115,18 +115,18 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 1000, Permission: Entry{
-						Level:  10,
-						Grant:  []string{"1.1", "1.2"},
-						Revoke: []string{"3.3", "2.2", "o.2"},
-					},
+					Level:  10,
+					Grant:  []string{"1.1", "1.2"},
+					Revoke: []string{"3.3", "2.2", "o.2"},
+				},
 				},
 				{
 					UID: "2", Weight: 800, Permission: Entry{
-						Level:    5,
-						SetLevel: true,
-						Grant:    []string{"2.1", "2.2"},
-						Revoke:   []string{"3.2", "1.2"},
-					},
+					Level:    5,
+					SetLevel: true,
+					Grant:    []string{"2.1", "2.2"},
+					Revoke:   []string{"3.2", "1.2"},
+				},
 				}, {
 					UID: "3", Weight: 500, Permission: Entry{
 						Level:  4,
@@ -152,10 +152,10 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 2, Permission: Entry{
-						Level:  1,
-						Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
-						Revoke: []string{"2.4"},
-					},
+					Level:  1,
+					Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
+					Revoke: []string{"2.4"},
+				},
 				}, {
 					UID: "2", Weight: 1, Permission: Entry{
 						Level:  2,
@@ -177,6 +177,108 @@ func TestBasicProcessor_Process(t *testing.T) {
 				Permission: []string{"2", "2.2", "2.3", "1", "1.2", "1.3", "self.grant", "self.order"},
 			},
 			wantErr: false,
+		}, {
+			name: "3rd test",
+			fields: fields{
+				Groups: []Group{
+					{
+						UID:    "-1",
+						Weight: -1,
+						Permission: Entry{
+							Level: 100,
+							Grant: []string{"-1.test"},
+						},
+					}, {
+						UID:    "0",
+						Weight: 0,
+						Permission: Entry{
+							Level: -50,
+							Grant: []string{"0.test"},
+						},
+					}, {
+						UID:    "1",
+						Weight: 2,
+						Permission: Entry{
+							EmptySet: true,
+							SetLevel: true,
+							Level:    -5,
+							Grant:    []string{"1.1", "1.2"},
+						},
+					}, {
+						UID:    "2",
+						Weight: 3,
+						Permission: Entry{
+							Level:  2,
+							Grant:  []string{"2.1", "2.2", "2.3"},
+							Revoke: []string{"1.2"},
+						},
+					}, {
+						UID:    "3",
+						Weight: 4,
+						Permission: Entry{
+							Level:  -1,
+							Grant:  []string{"3.1"},
+							Revoke: []string{"2.3"},
+						},
+					},
+				},
+			},
+			r: RawList{
+				Overwrites: Entry{
+					Level: 50,
+					Grant: []string{"r.1"},
+				},
+				Groups: []string{"3", "1", "0", "2", "-1"},
+			},
+			want: List{
+				Level:      46,
+				Permission: []string{"1.1", "2.1", "2.2", "3.1", "r.1"},
+			},
+			wantErr: false,
+		}, {
+			name: "4th Reverse",
+			fields: fields{
+				WeightAscending: true, Groups: []Group{
+					{
+						UID:    "1",
+						Weight: -1,
+						Permission: Entry{
+							Level:    5,
+							SetLevel: true,
+							Grant:    []string{"1.1", "1.2"},
+							Revoke:   []string{"low.2"},
+						},
+					}, {
+						UID:    "2",
+						Weight: -2,
+						Permission: Entry{
+							Level:    2,
+							SetLevel: false,
+							Grant:    []string{"2.1", "2.2"},
+							Revoke:   []string{"1.2"},
+						},
+					}, {
+						UID:    "3",
+						Weight: 10,
+						Permission: Entry{
+							Level:  -10,
+							Grant:  []string{"low.1", "low.2"},
+							Revoke: []string{"1.1"},
+						},
+					},
+				},
+			},
+			r: RawList{
+				Overwrites: Entry{
+					Level: -1,
+					Grant: []string{"self"},
+				},
+				Groups: []string{"3", "1", "2"},
+			},
+			want: List{
+				Level:      6,
+				Permission: []string{"low.1", "1.1", "2.1", "2.2", "self"},
+			},
 		},
 	}
 	for _, tt := range tests {
