@@ -1,4 +1,4 @@
-module github.com/Thunder33345/perms-manager
+module github.com/Thunder33345/roller
 
 go 1.16
 

@@ -1,4 +1,4 @@
-package perms_manager
+package roller
 
 //Group represent a collection of permissions and metadata
 type Group struct {

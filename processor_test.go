@@ -1,4 +1,4 @@
-package perms_manager
+package roller
 
 import (
 	"errors"

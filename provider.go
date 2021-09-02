@@ -1,4 +1,4 @@
-package perms_manager
+package roller
 
 //GroupProvider is something that's capable of providing a permission group
 type GroupProvider interface {
