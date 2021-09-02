@@ -16,7 +16,7 @@ func NewMissingGroupsError(groups []string) MissingGroupsError {
 }
 
 func (e MissingGroupsError) Error() string {
-	return fmt.Sprintf("Missing Group: %v", e.groups)
+	return fmt.Sprintf("missing group: %v", e.groups)
 }
 
 func (e MissingGroupsError) Groups() []string {

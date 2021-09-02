@@ -24,10 +24,6 @@ type BasicProcessor struct {
 	WeightAscending bool
 }
 
-func NewProcessor(provider GroupProvider) BasicProcessor {
-	return BasicProcessor{Provider: provider}
-}
-
 func (p BasicProcessor) compare(i, j int) bool {
 	if p.WeightAscending {
 		return i > j
@@ -112,7 +108,7 @@ func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 		}
 	}
 	if len(missing) > 0 {
-		return []Group{}, MissingGroupsError{groups: missing}
+		return []Group{}, NewMissingGroupsError(missing)
 	}
 	return gs, nil
 }

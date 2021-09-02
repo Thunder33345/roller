@@ -145,7 +145,7 @@ func BenchmarkExternal_removeNodesDirtyReplace(b *testing.B) {
 type removeNodes func(stack []string, needle []string) []string
 
 func getRemoveNodes() []removeNodes {
-	return []removeNodes{removeNodesAppend, removeNodesMakeCap, removeNodesDirtySwap, removeNodesDirtyReplace}
+	return []removeNodes{removeNodesAppend, removeNodesMakeCap, removeNodesDirtySwap}
 }
 
 func TestExternal_removeNodes(t *testing.T) {

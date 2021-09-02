@@ -6,12 +6,3 @@ type GroupProvider interface {
 	//returns bool as false when Group is not found
 	GetGroup(uid string) (Group, bool)
 }
-
-//GroupProviderFunc is a function type that also makes it compliant to the GroupProvider interface
-type GroupProviderFunc func(uid string) (Group, bool)
-
-var _ GroupProvider = (*GroupProviderFunc)(nil)
-
-func (g GroupProviderFunc) GetGroup(uid string) (Group, bool) {
-	return g(uid)
-}

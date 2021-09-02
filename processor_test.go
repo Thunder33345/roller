@@ -2,7 +2,9 @@ package perms_manager
 
 import (
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"math/rand"
 	"reflect"
 	"sort"
 	"testing"
@@ -19,83 +21,6 @@ func (d *dummyProvider) GetGroup(uid string) (Group, bool) {
 		}
 	}
 	return Group{}, false
-}
-
-func TestBasicProcessor_removeNodes(t *testing.T) {
-	p := BasicProcessor{WeightAscending: false}
-	tests := []struct {
-		name string
-		in   []string
-		arg  []string
-		want []string
-	}{
-		{
-			name: "simple",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string{"2", "3"},
-			want: []string{"1", "4"},
-		}, {
-			name: "repeated",
-			in:   []string{"1", "2", "2", "2", "4"},
-			arg:  []string{"2"},
-			want: []string{"1", "4"},
-		}, {
-			name: "multiple repeated",
-			in:   []string{"1", "2", "3", "4", "4"},
-			arg:  []string{"2", "3", "3", "4"},
-			want: []string{"1"},
-		}, {
-			name: "extract center",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string{"2", "3"},
-			want: []string{"1", "4"},
-		}, {
-			name: "remove all",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string{"2", "3", "4", "1"},
-			want: []string(nil),
-		}, {
-			name: "nil arg",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string(nil),
-			want: []string{"1", "2", "3", "4"},
-		}, {
-			name: "none arg",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string{},
-			want: []string{"1", "2", "3", "4"},
-		}, {
-			name: "impossible",
-			in:   []string{"1", "2", "3", "4"},
-			arg:  []string{"5", "6", "7", "8"},
-			want: []string{"1", "2", "3", "4"},
-		}, {
-			name: "empty input",
-			in:   []string{},
-			arg:  []string{"1", "2"},
-			want: []string(nil),
-		}, {
-			name: "nil input",
-			in:   []string(nil),
-			arg:  []string{"1", "2"},
-			want: []string(nil),
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			a := assert.New(t)
-			st := make([]string, len(tc.in))
-			copy(st, tc.in)
-			r := p.removeNodes(st, tc.arg)
-			if len(tc.want) == 0 {
-				a.Empty(r)
-			} else {
-				a.Equal(tc.want, r)
-				a.Equal(tc.in, st)
-			}
-		})
-	}
 }
 
 func TestBasicProcessor_Process(t *testing.T) {
@@ -115,18 +40,18 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 1000, Permission: Entry{
-					Level:  10,
-					Grant:  []string{"1.1", "1.2"},
-					Revoke: []string{"3.3", "2.2", "o.2"},
-				},
+						Level:  10,
+						Grant:  []string{"1.1", "1.2"},
+						Revoke: []string{"3.3", "2.2", "o.2"},
+					},
 				},
 				{
 					UID: "2", Weight: 800, Permission: Entry{
-					Level:    5,
-					SetLevel: true,
-					Grant:    []string{"2.1", "2.2"},
-					Revoke:   []string{"3.2", "1.2"},
-				},
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"3.2", "1.2"},
+					},
 				}, {
 					UID: "3", Weight: 500, Permission: Entry{
 						Level:  4,
@@ -152,10 +77,10 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 2, Permission: Entry{
-					Level:  1,
-					Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
-					Revoke: []string{"2.4"},
-				},
+						Level:  1,
+						Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
+						Revoke: []string{"2.4"},
+					},
 				}, {
 					UID: "2", Weight: 1, Permission: Entry{
 						Level:  2,
@@ -312,43 +237,123 @@ func TestBasicProcessor_Process(t *testing.T) {
 		a.Error(err)
 		me := MissingGroupsError{}
 		errors.As(err, &me)
-		a.Equal([]string{"2", "3"}, me.groups)
+		a.Equal([]string{"2", "3"}, me.Groups())
+		a.Equal(me.Error(), fmt.Sprintf("missing group: %v", me.Groups()))
 	})
 }
 
-func TestBasicProcessor_compare(t *testing.T) {
-	//notes: yes the ascending and expected results wants are inverted
-	//this is due to the way the ordered results are iterated with range in a first->last order
-	//therefore it should be read the other way
-	tests := []struct {
-		name            string
+func TestBasicProcessor_ProcessFlags(t *testing.T) {
+	type fields struct {
+		Groups          []Group
 		WeightAscending bool
-		arg             []int
-		want            []int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		r       RawList
+		flags   []string
+		want    List
+		wantErr bool
 	}{
 		{
-			name:            "Ascending",
-			WeightAscending: true,
-			arg:             []int{2, 4, 6, 3, 1, 5},
-			want:            []int{6, 5, 4, 3, 2, 1},
+			name: "Simple flags",
+			fields: fields{Groups: []Group{
+				{
+					UID: "1", Weight: 100, Permission: Entry{
+						Level:  10,
+						Grant:  []string{"1.1", "1fs.1"},
+						Revoke: []string{"2.2", "o.1"},
+					},
+					Flags: map[string]FlagEntry{
+						"f1": {
+							Weight: 100,
+							Entry: Entry{
+								Level:  1,
+								Grant:  []string{"1f1.1"},
+								Revoke: []string{"1f2.1", "1fs.1"},
+							},
+						},
+						"f2": {
+							Weight: 20,
+							Entry: Entry{
+								Level:  1,
+								Grant:  []string{"1f2.1"},
+								Revoke: []string{"1f1.1"},
+							},
+						},
+					},
+				},
+				{
+					UID: "2", Weight: 50, Permission: Entry{
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"1.1"},
+					},
+					Flags: map[string]FlagEntry{
+						"f1": {
+							Weight:     100,
+							Preprocess: true,
+							Entry: Entry{
+								Grant:  []string{"2f1.1"},
+								Revoke: []string{"2.1"},
+							},
+						},
+						"f2": {
+							Weight:     10,
+							Preprocess: true,
+							Entry: Entry{
+								Grant:  []string{},
+								Revoke: []string{"2f1.1"},
+							},
+						}},
+				}, {
+					UID: "3", Weight: 10, Flags: map[string]FlagEntry{
+						"f3": {
+							Weight:     100,
+							Preprocess: true,
+							Entry: Entry{
+								Grant: []string{"3f3"},
+							},
+						}},
+				},
+			}},
+			r: RawList{
+				Overwrites: Entry{
+					Level:  3,
+					Grant:  []string{"o.1"},
+					Revoke: []string{"o.1"},
+				},
+				Groups: []string{"1", "2", "3"},
+			},
+			flags: []string{"f1", "f2", "f3"},
+			want: List{
+				Level:      20,
+				Permission: []string{"3f3", "2f1.1", "2.1", "1.1", "1f1.1", "o.1"},
+			},
 		}, {
-			name:            "Descending",
-			WeightAscending: false,
-			arg:             []int{2, 4, 6, 3, 1, 5},
-			want:            []int{1, 2, 3, 4, 5, 6},
+			name: "Want error",
+			r: RawList{
+				Groups: []string{"1"},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := assert.New(t)
 			p := BasicProcessor{
-				WeightAscending: tt.WeightAscending,
+				Provider:        &dummyProvider{groups: tt.fields.Groups},
+				WeightAscending: tt.fields.WeightAscending,
 			}
-			s := tt.arg
-			sort.Slice(s, func(i, j int) bool {
-				return p.compare(s[i], s[j])
-			})
-			a.Equal(tt.want, s)
+			got, err := p.ProcessFlags(tt.r, tt.flags...)
+			if tt.wantErr {
+				a.Error(err, "Error expected, missing error")
+				return
+			}
+			a.NoError(err, "Unexpected error")
+			a.Equal(tt.want.Level, got.Level, "Level should be equal")
+			a.ElementsMatch(tt.want.Permission, got.Permission, "Permissions should match")
 		})
 	}
 }
@@ -398,7 +403,6 @@ func TestBasicProcessor_MergeEntry(t *testing.T) {
 		})
 	}
 }
-
 func TestBasicProcessor_processSet(t *testing.T) {
 	p := BasicProcessor{}
 	l := func() List {
@@ -510,6 +514,120 @@ func TestBasicProcessor_processSet(t *testing.T) {
 	})
 }
 
+func TestBasicProcessor_removeNodes(t *testing.T) {
+	p := BasicProcessor{WeightAscending: false}
+	tests := []struct {
+		name string
+		in   []string
+		arg  []string
+		want []string
+	}{
+		{
+			name: "simple",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string{"2", "3"},
+			want: []string{"1", "4"},
+		}, {
+			name: "repeated",
+			in:   []string{"1", "2", "2", "2", "4"},
+			arg:  []string{"2"},
+			want: []string{"1", "4"},
+		}, {
+			name: "multiple repeated",
+			in:   []string{"1", "2", "3", "4", "4"},
+			arg:  []string{"2", "3", "3", "4"},
+			want: []string{"1"},
+		}, {
+			name: "extract center",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string{"2", "3"},
+			want: []string{"1", "4"},
+		}, {
+			name: "remove all",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string{"2", "3", "4", "1"},
+			want: []string(nil),
+		}, {
+			name: "nil arg",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string(nil),
+			want: []string{"1", "2", "3", "4"},
+		}, {
+			name: "none arg",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string{},
+			want: []string{"1", "2", "3", "4"},
+		}, {
+			name: "impossible",
+			in:   []string{"1", "2", "3", "4"},
+			arg:  []string{"5", "6", "7", "8"},
+			want: []string{"1", "2", "3", "4"},
+		}, {
+			name: "empty input",
+			in:   []string{},
+			arg:  []string{"1", "2"},
+			want: []string(nil),
+		}, {
+			name: "nil input",
+			in:   []string(nil),
+			arg:  []string{"1", "2"},
+			want: []string(nil),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assert.New(t)
+			st := make([]string, len(tc.in))
+			copy(st, tc.in)
+			r := p.removeNodes(st, tc.arg)
+			if len(tc.want) == 0 {
+				a.Empty(r)
+			} else {
+				a.Equal(tc.want, r)
+				a.Equal(tc.in, st)
+			}
+		})
+	}
+}
+
+func TestBasicProcessor_compare(t *testing.T) {
+	//notes: yes the ascending and expected results wants are inverted
+	//this is due to the way the ordered results are iterated with range in a first->last order
+	//therefore it should be read the other way
+	tests := []struct {
+		name            string
+		WeightAscending bool
+		arg             []int
+		want            []int
+	}{
+		{
+			name:            "Ascending",
+			WeightAscending: true,
+			arg:             []int{2, 4, 6, 3, 1, 5},
+			want:            []int{6, 5, 4, 3, 2, 1},
+		}, {
+			name:            "Descending",
+			WeightAscending: false,
+			arg:             []int{2, 4, 6, 3, 1, 5},
+			want:            []int{1, 2, 3, 4, 5, 6},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := assert.New(t)
+			p := BasicProcessor{
+				WeightAscending: tt.WeightAscending,
+			}
+			s := tt.arg
+			sort.Slice(s, func(i, j int) bool {
+				return p.compare(s[i], s[j])
+			})
+			a.Equal(tt.want, s)
+		})
+	}
+}
+
 func BenchmarkBasicProcessor_removeNodes(b *testing.B) {
 	p := BasicProcessor{}
 	data := genBenchData(sliceArgs)
@@ -521,4 +639,123 @@ func BenchmarkBasicProcessor_removeNodes(b *testing.B) {
 			}
 		})
 	}
+}
+
+func BenchmarkBasicProcessor_Process(b *testing.B) {
+	i1 := randSlice(75, 25)
+	i2 := randSlice(100, 25)
+	i3 := randSlice(100, 25)
+	i4 := randSlice(150, 25)
+	p := BasicProcessor{
+		Provider: &dummyProvider{groups: []Group{
+			{
+				UID:    "-1",
+				Weight: -1,
+				Permission: Entry{
+					Level: 100,
+					Grant: i1,
+				},
+			}, {
+				UID:    "0",
+				Weight: 0,
+				Permission: Entry{
+					Level:  -50,
+					Grant:  i2,
+					Revoke: randNeedles(i1, len(i1)/3),
+				},
+			}, {
+				UID:    "1",
+				Weight: 2,
+				Permission: Entry{
+					EmptySet: true,
+					SetLevel: true,
+					Level:    -5,
+					Grant:    append([]string{"1.1", "1.2"}, i3...),
+				},
+			}, {
+				UID:    "2",
+				Weight: 3,
+				Permission: Entry{
+					Level:  2,
+					Grant:  i4,
+					Revoke: randNeedles(i3, len(i3)/3),
+				},
+			}, {
+				UID:    "3",
+				Weight: 4,
+				Permission: Entry{
+					Level:  -1,
+					Grant:  []string{"3.1"},
+					Revoke: randNeedles(i4, len(i4)/2),
+				},
+			},
+		}},
+	}
+	r := RawList{
+		Overwrites: Entry{
+			Level: 50,
+			Grant: []string{"r.1"},
+		},
+		Groups: []string{"3", "1", "0", "2", "-1"},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = p.Process(r)
+	}
+}
+
+func BenchmarkBasicProcessor_ProcessMulti(b *testing.B) {
+	var entry []Entry
+
+	for i := 0; i < 10; i++ {
+		entry = append(entry, genEntry(40, 150, entry))
+	}
+
+	group, ids := genGroups(entry)
+	p := BasicProcessor{Provider: &dummyProvider{groups: group}}
+	b.ResetTimer()
+	b.Run("something", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = p.Process(RawList{Groups: ids})
+		}
+	})
+}
+
+func genGroups(entry []Entry) ([]Group, []string) {
+	var gs []Group
+	var ids []string
+
+	for _, e := range entry {
+		str := randStringBytes(5)
+		ids = append(ids, str)
+		gs = append(gs, Group{
+			UID:        str,
+			Weight:     rand.Intn(1000),
+			Permission: e,
+		})
+	}
+	return gs, ids
+}
+func genEntry(len int, c float64, prev []Entry) Entry {
+	rb := func() bool {
+		return rand.Intn(2) == 1
+	}
+	var rev []string
+
+	for _, e := range prev {
+		for _, g := range e.Grant {
+			if float64(rand.Intn(1000)) <= c {
+				rev = append(rev, g)
+			}
+		}
+	}
+
+	e := Entry{
+		EmptySet: rb(),
+		Level:    rand.Intn(1000),
+		SetLevel: rb(),
+		Grant:    randSlice(len, 10),
+		Revoke:   rev,
+	}
+	return e
 }
