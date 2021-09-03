@@ -59,58 +59,22 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 
 	var l List
 	for _, g := range gs {
-		var fl []FlagEntry
-		if len(g.Flags) > 0 {
-			var fs []FlagEntry
-			for _, v := range flags {
-				sf, ok := g.Flags[v]
-				if !ok {
-					continue
-				}
-				fs = append(fs, sf)
-			}
-
-			sort.Slice(fs, func(i, j int) bool {
-				return p.compare(fs[i].Weight, fs[j].Weight)
-			})
-			for _, v := range fs {
-				if v.Preprocess {
-					l = p.processSet(l, v.Entry)
-				} else {
-					fl = append(fl, v)
-				}
-			}
+		pre, post := p.getFlags(g.Flags, flags)
+		for _, v := range pre {
+			l = p.processSet(l, v.Entry)
 		}
 		l = p.processSet(l, g.Permission)
-		for _, v := range fl {
+		for _, v := range post {
 			l = p.processSet(l, v.Entry)
 		}
 	}
 
-	var fl []FlagEntry
-	if len(r.Flags) > 0 {
-		var fs []FlagEntry
-		for _, v := range flags {
-			sf, ok := r.Flags[v]
-			if !ok {
-				continue
-			}
-			fs = append(fs, sf)
-		}
-
-		sort.Slice(fs, func(i, j int) bool {
-			return p.compare(fs[i].Weight, fs[j].Weight)
-		})
-		for _, v := range fs {
-			if v.Preprocess {
-				l = p.processSet(l, v.Entry)
-			} else {
-				fl = append(fl, v)
-			}
-		}
+	pre, post := p.getFlags(r.Flags, flags)
+	for _, v := range pre {
+		l = p.processSet(l, v.Entry)
 	}
 	l = p.processSet(l, r.Overwrites)
-	for _, v := range fl {
+	for _, v := range post {
 		l = p.processSet(l, v.Entry)
 	}
 	return l, nil
@@ -150,6 +114,27 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 	}
 	l.Permission = append(l.Permission, set.Grant...)
 	return l
+}
+
+//getFlags tries to get all selected flags from the map then return the sorted slice into preprocess and postprocess
+func (p BasicProcessor) getFlags(flags map[string]FlagEntry, selected []string) (pre []FlagEntry, post []FlagEntry) {
+	fl := make([]FlagEntry, 0, len(selected))
+	for _, sel := range selected {
+		if f, ok := flags[sel]; ok {
+			fl = append(fl, f)
+		}
+	}
+	sort.Slice(fl, func(i, j int) bool {
+		return p.compare(fl[i].Weight, fl[j].Weight)
+	})
+	for _, f := range fl {
+		if f.Preprocess {
+			pre = append(pre, f)
+		} else {
+			post = append(post, f)
+		}
+	}
+	return pre, post
 }
 
 //removeNodes removes needles from a specified stack,
