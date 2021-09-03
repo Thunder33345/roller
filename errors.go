@@ -2,23 +2,29 @@ package roller
 
 import "fmt"
 
-var _ error = (*MissingGroupsError)(nil) // ensure MissingGroupsError implements error
+var _ error = (*MissingGroupError)(nil) // ensure MissingGroupError implements error
 
-//MissingGroupsError Is an error raised by Process when group provider fails to load a certain groups
-type MissingGroupsError struct {
-	groups []string
+//MissingGroupError Is an error raised by Process when group provider fails to load a certain groups
+type MissingGroupError struct {
+	group string
+	error error
 }
 
-func NewMissingGroupsError(groups []string) MissingGroupsError {
-	return MissingGroupsError{
-		groups: groups,
+func NewMissingGroupsError(gid string, err error) MissingGroupError {
+	return MissingGroupError{
+		group: gid,
+		error: err,
 	}
 }
 
-func (e MissingGroupsError) Error() string {
-	return fmt.Sprintf("missing group: %v", e.groups)
+func (e MissingGroupError) Error() string {
+	return fmt.Sprintf("failed to access group \"%v\": %v", e.Group(), e.error)
 }
 
-func (e MissingGroupsError) Groups() []string {
-	return e.groups
+func (e MissingGroupError) Unwrap() error {
+	return e.error
+}
+
+func (e MissingGroupError) Group() string {
+	return e.group
 }

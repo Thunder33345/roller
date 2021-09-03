@@ -99,16 +99,13 @@ func (p BasicProcessor) MergeEntry(l List, es ...Entry) List {
 
 func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 	var gs []Group
-	var missing []string
-	for _, uid := range r {
-		if v, ok := p.Provider.GetGroup(uid); ok {
+	for _, gid := range r {
+		v, err := p.Provider.GetGroup(gid)
+		if err == nil {
 			gs = append(gs, v)
 		} else {
-			missing = append(missing, uid)
+			return []Group{}, NewMissingGroupsError(gid, err)
 		}
-	}
-	if len(missing) > 0 {
-		return []Group{}, NewMissingGroupsError(missing)
 	}
 	return gs, nil
 }
