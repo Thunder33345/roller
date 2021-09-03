@@ -40,18 +40,18 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 1000, Permission: Entry{
-					Level:  10,
-					Grant:  []string{"1.1", "1.2"},
-					Revoke: []string{"3.3", "2.2", "o.2"},
-				},
+						Level:  10,
+						Grant:  []string{"1.1", "1.2"},
+						Revoke: []string{"3.3", "2.2", "o.2"},
+					},
 				},
 				{
 					UID: "2", Weight: 800, Permission: Entry{
-					Level:    5,
-					SetLevel: true,
-					Grant:    []string{"2.1", "2.2"},
-					Revoke:   []string{"3.2", "1.2"},
-				},
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"3.2", "1.2"},
+					},
 				}, {
 					UID: "3", Weight: 500, Permission: Entry{
 						Level:  4,
@@ -77,10 +77,10 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 2, Permission: Entry{
-					Level:  1,
-					Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
-					Revoke: []string{"2.4"},
-				},
+						Level:  1,
+						Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
+						Revoke: []string{"2.4"},
+					},
 				}, {
 					UID: "2", Weight: 1, Permission: Entry{
 						Level:  2,
@@ -259,10 +259,10 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 			fields: fields{Groups: []Group{
 				{
 					UID: "1", Weight: 100, Permission: Entry{
-					Level:  10,
-					Grant:  []string{"1.1", "1fs.1"},
-					Revoke: []string{"2.2", "o.1"},
-				},
+						Level:  10,
+						Grant:  []string{"1.1", "1fs.1"},
+						Revoke: []string{"2.2", "o.1"},
+					},
 					Flags: map[string]FlagEntry{
 						"f1": {
 							Weight: 100,
@@ -284,11 +284,11 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 				},
 				{
 					UID: "2", Weight: 50, Permission: Entry{
-					Level:    5,
-					SetLevel: true,
-					Grant:    []string{"2.1", "2.2"},
-					Revoke:   []string{"1.1"},
-				},
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"1.1"},
+					},
 					Flags: map[string]FlagEntry{
 						"f1": {
 							Weight:     100,
