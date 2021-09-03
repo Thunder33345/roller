@@ -50,6 +50,8 @@ type RawList struct {
 	Overwrites Entry
 	//Groups are a list of group UUID to inherit permission from
 	Groups []string
+	//Flags are conditional overwrites for said raw list
+	Flags map[string]FlagEntry
 }
 
 //List is the compiled result from a RawList

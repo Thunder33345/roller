@@ -86,7 +86,33 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 			l = p.processSet(l, v.Entry)
 		}
 	}
+
+	var fl []FlagEntry
+	if len(r.Flags) > 0 {
+		var fs []FlagEntry
+		for _, v := range flags {
+			sf, ok := r.Flags[v]
+			if !ok {
+				continue
+			}
+			fs = append(fs, sf)
+		}
+
+		sort.Slice(fs, func(i, j int) bool {
+			return p.compare(fs[i].Weight, fs[j].Weight)
+		})
+		for _, v := range fs {
+			if v.Preprocess {
+				l = p.processSet(l, v.Entry)
+			} else {
+				fl = append(fl, v)
+			}
+		}
+	}
 	l = p.processSet(l, r.Overwrites)
+	for _, v := range fl {
+		l = p.processSet(l, v.Entry)
+	}
 	return l, nil
 }
 
