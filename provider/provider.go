@@ -4,26 +4,37 @@ import (
 	"github.com/Thunder33345/roller"
 )
 
-var _ roller.GroupProvider = (GroupStoreProvider)(nil)
+var _ roller.GroupProvider = (GroupStorer)(nil)
 
-//GroupStoreProvider is something that is capable of store and provide groups
-type GroupStoreProvider interface {
-	SetGroup(gid string, group roller.Group) error
-	GetGroup(gid string) (roller.Group, error)
+//GroupStorer is something that is capable of store and provide groups
+type GroupStorer interface {
+	AddGroup(group roller.Group) error
+	GetGroup(id string) (roller.Group, error)
+	RemoveGroup(id string) error
 }
 
-//ListStoreProvider is something that can store and provide lists
-type ListStoreProvider interface {
-	SetList(lid string, list roller.List) error
-	GetList(lid string) (roller.List, error)
+//Walker is an iterable provider
+type Walker interface {
+	//WalkGroup will iterate through all the groups with provided callback
+	//if the function returns true, it will halt the process
+	WalkGroup(func(roller.Group) (halt bool)) error
 }
 
-//FileProvider is something that lives on the file system
-type FileProvider interface {
-	//Close should be called before closing for cleaning up
-	Close() error
-	//Save will cause the provider to save all information to disk
+//Saver is a provider that needs manual saving
+type Saver interface {
+	//Save will flush and save internal state
 	Save() error
-	//Reload will cause the provider to reload all data from disk
+}
+
+//Closer is a provider that needs cleaning up
+//Behaviour is undefined if used after closing
+type Closer interface {
+	//Close will make the close and free all relevant data
+	Close() error
+}
+
+//Reloader is a provider that's capable of reinitialize its internal state
+type Reloader interface {
+	//Reload will reload the provider
 	Reload() error
 }
