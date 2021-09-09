@@ -90,7 +90,7 @@ func (p BasicProcessor) MergeEntry(l List, es ...Entry) List {
 func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 	var gs []Group
 	for _, gid := range r {
-		v, err := p.Provider.GetGroup(gid)
+		v, err := p.Provider.Group(gid)
 		if err == nil {
 			gs = append(gs, v)
 		} else {

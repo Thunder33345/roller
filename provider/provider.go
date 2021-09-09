@@ -9,7 +9,7 @@ var _ roller.GroupProvider = (GroupStorer)(nil)
 //GroupStorer is something that is capable of store and provide groups
 type GroupStorer interface {
 	AddGroup(group roller.Group) error
-	GetGroup(id string) (roller.Group, error)
+	Group(id string) (roller.Group, error)
 	RemoveGroup(id string) error
 }
 

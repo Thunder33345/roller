@@ -14,7 +14,7 @@ type dummyProvider struct {
 	groups []Group
 }
 
-func (d *dummyProvider) GetGroup(uid string) (Group, error) {
+func (d *dummyProvider) Group(uid string) (Group, error) {
 	for _, v := range d.groups {
 		if v.UID == uid {
 			return v, nil
