@@ -24,12 +24,20 @@ type JSON struct {
 	unsafeSave bool
 }
 
-func NewJSON(file io.ReadWriter, readOnly bool) *JSON {
-	return &JSON{file: file, readOnly: readOnly, indent: "\t"}
+func NewJSON(file io.ReadWriter, readOnly bool) (*JSON, error) {
+	j := &JSON{file: file, readOnly: readOnly, indent: "\t"}
+	if err := j.Load(); err != nil {
+		return nil, err
+	}
+	return j, nil
 }
 
-func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string, unsafeSave bool) *JSON {
-	return &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent, unsafeSave: unsafeSave}
+func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string, unsafeSave bool) (*JSON, error) {
+	j := &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent, unsafeSave: unsafeSave}
+	if err := j.Load(); err != nil {
+		return nil, err
+	}
+	return j, nil
 }
 
 func (j *JSON) Group(id string) (roller.Group, error) {
@@ -44,12 +52,12 @@ func (j *JSON) AddGroup(group roller.Group) error {
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
-	i, g := j.findGroup(group.UID)
+	i, _ := j.findGroup(group.UID)
 	if i >= 0 {
 		j.groups[i] = group
 		return nil
 	}
-	j.groups = append(j.groups, g)
+	j.groups = append(j.groups, group)
 	return nil
 }
 
@@ -60,6 +68,7 @@ func (j *JSON) RemoveGroup(id string) error {
 	i, _ := j.findGroup(id)
 	if i >= 0 {
 		j.groups = append(j.groups[:i], j.groups[i+1:]...)
+		return nil
 	}
 	return NewGroupNotFoundError(id)
 }
@@ -80,7 +89,7 @@ func (j *JSON) Load() error {
 		dec.DisallowUnknownFields()
 	}
 	var tg []roller.Group
-	if err := dec.Decode(&tg); err != nil {
+	if err := dec.Decode(&tg); err != nil && err.Error() != "EOF" {
 		return err
 	}
 	if err := j.duplicateCheck(tg); err != nil {
@@ -100,6 +109,14 @@ func (j *JSON) Save() error {
 	}
 	if err := j.duplicateCheck(j.groups); err != nil && !j.unsafeSave {
 		return err
+	}
+	if t, ok := j.file.(truncateSeeker); ok {
+		if err := t.Truncate(0); err != nil {
+			return err
+		}
+		if _, err := t.Seek(0, 0); err != nil {
+			return err
+		}
 	}
 	enc := json.NewEncoder(j.file)
 	enc.SetEscapeHTML(false)

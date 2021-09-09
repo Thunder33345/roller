@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/Thunder33345/roller"
+	"io"
 )
 
 var _ roller.GroupProvider = (GroupStorer)(nil)
@@ -37,4 +38,11 @@ type Closer interface {
 type Reloader interface { //todo set a better name
 	//Reload will reload the provider
 	Reload() error
+}
+
+//truncateSeeker is an io.ReadWriter that can be seeked and truncated
+//internally used for compat on JSON.Save where Truncate(0) and Seek(0,0) will be called before writing
+type truncateSeeker interface {
+	Truncate(size int64) error
+	io.Seeker
 }
