@@ -7,7 +7,7 @@ import (
 var _ roller.GroupProvider = (GroupStorer)(nil)
 
 //GroupStorer is something that is capable of store and provide groups
-type GroupStorer interface {
+type GroupStorer interface { //todo set a better name
 	AddGroup(group roller.Group) error
 	Group(id string) (roller.Group, error)
 	RemoveGroup(id string) error
@@ -34,7 +34,7 @@ type Closer interface {
 }
 
 //Reloader is a provider that's capable of reinitialize its internal state
-type Reloader interface {
+type Reloader interface { //todo set a better name
 	//Reload will reload the provider
 	Reload() error
 }
