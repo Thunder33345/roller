@@ -115,14 +115,19 @@ func (j *JSON) Save() error {
 	if err := j.duplicateCheck(j.groups); err != nil && !j.unsafeSave {
 		return err
 	}
-	if t, ok := j.file.(truncateSeeker); ok {
+
+	switch t := j.file.(type) {
+	case truncateSeeker:
 		if err := t.Truncate(0); err != nil {
 			return err
 		}
 		if _, err := t.Seek(0, 0); err != nil {
 			return err
 		}
+	case reseter:
+		t.Reset()
 	}
+
 	enc := json.NewEncoder(j.file)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", j.indent)

@@ -46,3 +46,8 @@ type truncateSeeker interface {
 	Truncate(size int64) error
 	io.Seeker
 }
+
+//resetter is an io.ReadWriter that can be reset before being written to, used for JSON.Save
+type reseter interface {
+	Reset()
+}
