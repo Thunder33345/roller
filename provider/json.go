@@ -150,7 +150,7 @@ func (j *JSON) duplicateCheck(groups []roller.Group) error {
 	for i, g := range groups {
 		di, exist := found[g.UID]
 		if exist {
-			og := j.groups[di]
+			og := groups[di]
 			return NewDuplicateIDError(og, g)
 		}
 		found[g.UID] = i
