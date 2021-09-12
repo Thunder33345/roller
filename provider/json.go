@@ -88,8 +88,13 @@ func (j *JSON) Load() error {
 	if !j.allowUnknown {
 		dec.DisallowUnknownFields()
 	}
+
+	if !dec.More() {
+		return nil
+	}
+
 	var tg []roller.Group
-	if err := dec.Decode(&tg); err != nil && err.Error() != "EOF" {
+	if err := dec.Decode(&tg); err != nil {
 		return err
 	}
 	if err := j.duplicateCheck(tg); err != nil {
