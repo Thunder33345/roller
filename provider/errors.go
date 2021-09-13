@@ -23,27 +23,27 @@ func (e GroupNotFoundError) ID() string {
 	return e.id
 }
 
-var _ error = (*DuplicateIDError)(nil)
+var _ error = (*DuplicateGroupIDError)(nil)
 
-type DuplicateIDError struct {
+type DuplicateGroupIDError struct {
 	g1 roller.Group
 	g2 roller.Group
 }
 
-func NewDuplicateIDError(original roller.Group, duplicate roller.Group) DuplicateIDError {
-	return DuplicateIDError{g1: original, g2: duplicate}
+func NewDuplicateIDError(original roller.Group, duplicate roller.Group) DuplicateGroupIDError {
+	return DuplicateGroupIDError{g1: original, g2: duplicate}
 }
 
-func (e DuplicateIDError) Error() string {
-	return fmt.Sprintf("unique ID not unique: UID \"%s\"(%s[#%s]) already exist, "+
-		"cant be shared with UID \"%s\"(%s[#%s])", e.g1.UID, e.g1.Name, e.g1.RefName, e.g2.UID, e.g2.Name, e.g2.RefName)
+func (e DuplicateGroupIDError) Error() string {
+	return fmt.Sprintf("group ID not unique: ID \"%s\"(%s[#%s]) already exist, "+
+		"cant be shared with ID \"%s\"(%s[#%s])", e.g1.UID, e.g1.Name, e.g1.RefName, e.g2.UID, e.g2.Name, e.g2.RefName)
 }
 
-func (e DuplicateIDError) Original() roller.Group {
+func (e DuplicateGroupIDError) Original() roller.Group {
 	return e.g1
 }
 
-func (e DuplicateIDError) Duplicate() roller.Group {
+func (e DuplicateGroupIDError) Duplicate() roller.Group {
 	return e.g2
 }
 
