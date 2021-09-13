@@ -16,7 +16,7 @@ type dummyProvider struct {
 
 func (d *dummyProvider) Group(uid string) (Group, error) {
 	for _, v := range d.groups {
-		if v.UID == uid {
+		if v.ID == uid {
 			return v, nil
 		}
 	}
@@ -39,21 +39,21 @@ func TestBasicProcessor_Process(t *testing.T) {
 			name: "Simple 1",
 			fields: fields{Groups: []Group{
 				{
-					UID: "1", Weight: 1000, Permission: Entry{
-					Level:  10,
-					Grant:  []string{"1.1", "1.2"},
-					Revoke: []string{"3.3", "2.2", "o.2"},
-				},
+					ID: "1", Weight: 1000, Permission: Entry{
+						Level:  10,
+						Grant:  []string{"1.1", "1.2"},
+						Revoke: []string{"3.3", "2.2", "o.2"},
+					},
 				},
 				{
-					UID: "2", Weight: 800, Permission: Entry{
-					Level:    5,
-					SetLevel: true,
-					Grant:    []string{"2.1", "2.2"},
-					Revoke:   []string{"3.2", "1.2"},
-				},
+					ID: "2", Weight: 800, Permission: Entry{
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"3.2", "1.2"},
+					},
 				}, {
-					UID: "3", Weight: 500, Permission: Entry{
+					ID: "3", Weight: 500, Permission: Entry{
 						Level:  4,
 						Grant:  []string{"3.1", "3.2", "3.3"},
 						Revoke: []string{"2.1"},
@@ -76,13 +76,13 @@ func TestBasicProcessor_Process(t *testing.T) {
 			name: "Simple 2",
 			fields: fields{Groups: []Group{
 				{
-					UID: "1", Weight: 2, Permission: Entry{
-					Level:  1,
-					Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
-					Revoke: []string{"2.4"},
-				},
+					ID: "1", Weight: 2, Permission: Entry{
+						Level:  1,
+						Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
+						Revoke: []string{"2.4"},
+					},
 				}, {
-					UID: "2", Weight: 1, Permission: Entry{
+					ID: "2", Weight: 1, Permission: Entry{
 						Level:  2,
 						Grant:  []string{"2", "2.2", "2.3", "2.4"},
 						Revoke: []string{"1.3"},
@@ -107,21 +107,21 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{
 				Groups: []Group{
 					{
-						UID:    "-1",
+						ID:     "-1",
 						Weight: -1,
 						Permission: Entry{
 							Level: 100,
 							Grant: []string{"-1.test"},
 						},
 					}, {
-						UID:    "0",
+						ID:     "0",
 						Weight: 0,
 						Permission: Entry{
 							Level: -50,
 							Grant: []string{"0.test"},
 						},
 					}, {
-						UID:    "1",
+						ID:     "1",
 						Weight: 2,
 						Permission: Entry{
 							EmptySet: true,
@@ -130,7 +130,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 							Grant:    []string{"1.1", "1.2"},
 						},
 					}, {
-						UID:    "2",
+						ID:     "2",
 						Weight: 3,
 						Permission: Entry{
 							Level:  2,
@@ -138,7 +138,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 							Revoke: []string{"1.2"},
 						},
 					}, {
-						UID:    "3",
+						ID:     "3",
 						Weight: 4,
 						Permission: Entry{
 							Level:  -1,
@@ -165,7 +165,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 			fields: fields{
 				WeightAscending: true, Groups: []Group{
 					{
-						UID:    "1",
+						ID:     "1",
 						Weight: -1,
 						Permission: Entry{
 							Level:    5,
@@ -174,7 +174,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 							Revoke:   []string{"low.2"},
 						},
 					}, {
-						UID:    "2",
+						ID:     "2",
 						Weight: -2,
 						Permission: Entry{
 							Level:    2,
@@ -183,7 +183,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 							Revoke:   []string{"1.2"},
 						},
 					}, {
-						UID:    "3",
+						ID:     "3",
 						Weight: 10,
 						Permission: Entry{
 							Level:  -10,
@@ -229,7 +229,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 	t.Run("Missing", func(t *testing.T) {
 		a := assert.New(t)
 		p := BasicProcessor{
-			Provider: &dummyProvider{groups: []Group{{UID: "1"}}},
+			Provider: &dummyProvider{groups: []Group{{ID: "1"}}},
 		}
 		_, err := p.Process(RawList{Groups: []string{"1", "2"}})
 		a.Error(err)
@@ -258,11 +258,11 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 			name: "Simple flags",
 			fields: fields{Groups: []Group{
 				{
-					UID: "1", Weight: 100, Permission: Entry{
-					Level:  10,
-					Grant:  []string{"1.1", "1fs.1"},
-					Revoke: []string{"2.2", "o.1"},
-				},
+					ID: "1", Weight: 100, Permission: Entry{
+						Level:  10,
+						Grant:  []string{"1.1", "1fs.1"},
+						Revoke: []string{"2.2", "o.1"},
+					},
 					Flags: map[string]FlagEntry{
 						"f1": {
 							Weight: 100,
@@ -283,12 +283,12 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 					},
 				},
 				{
-					UID: "2", Weight: 50, Permission: Entry{
-					Level:    5,
-					SetLevel: true,
-					Grant:    []string{"2.1", "2.2"},
-					Revoke:   []string{"1.1"},
-				},
+					ID: "2", Weight: 50, Permission: Entry{
+						Level:    5,
+						SetLevel: true,
+						Grant:    []string{"2.1", "2.2"},
+						Revoke:   []string{"1.1"},
+					},
 					Flags: map[string]FlagEntry{
 						"f1": {
 							Weight:     100,
@@ -307,7 +307,7 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 							},
 						}},
 				}, {
-					UID: "3", Weight: 10, Flags: map[string]FlagEntry{
+					ID: "3", Weight: 10, Flags: map[string]FlagEntry{
 						"f3": {
 							Weight:     100,
 							Preprocess: true,
@@ -686,14 +686,14 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 	p := BasicProcessor{
 		Provider: &dummyProvider{groups: []Group{
 			{
-				UID:    "-1",
+				ID:     "-1",
 				Weight: -1,
 				Permission: Entry{
 					Level: 100,
 					Grant: i1,
 				},
 			}, {
-				UID:    "0",
+				ID:     "0",
 				Weight: 0,
 				Permission: Entry{
 					Level:  -50,
@@ -701,7 +701,7 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 					Revoke: randNeedles(i1, len(i1)/3),
 				},
 			}, {
-				UID:    "1",
+				ID:     "1",
 				Weight: 2,
 				Permission: Entry{
 					EmptySet: true,
@@ -710,7 +710,7 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 					Grant:    append([]string{"1.1", "1.2"}, i3...),
 				},
 			}, {
-				UID:    "2",
+				ID:     "2",
 				Weight: 3,
 				Permission: Entry{
 					Level:  2,
@@ -718,7 +718,7 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 					Revoke: randNeedles(i3, len(i3)/3),
 				},
 			}, {
-				UID:    "3",
+				ID:     "3",
 				Weight: 4,
 				Permission: Entry{
 					Level:  -1,
@@ -766,7 +766,7 @@ func genGroups(entry []Entry) ([]Group, []string) {
 		str := randStringBytes(5)
 		ids = append(ids, str)
 		gs = append(gs, Group{
-			UID:        str,
+			ID:         str,
 			Weight:     rand.Intn(1000),
 			Permission: e,
 		})

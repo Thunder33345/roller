@@ -52,7 +52,7 @@ func (j *JSON) AddGroup(group roller.Group) error {
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
-	i, _ := j.findGroup(group.UID)
+	i, _ := j.findGroup(group.ID)
 	if i >= 0 {
 		j.groups[i] = group
 		return nil
@@ -162,7 +162,7 @@ func (j *JSON) Close() error {
 
 func (j *JSON) findGroup(id string) (int, roller.Group) {
 	for i, g := range j.groups {
-		if g.UID == id {
+		if g.ID == id {
 			return i, g
 		}
 	}
@@ -172,12 +172,12 @@ func (j *JSON) findGroup(id string) (int, roller.Group) {
 func (j *JSON) duplicateCheck(groups []roller.Group) error {
 	found := make(map[string]int, len(groups))
 	for i, g := range groups {
-		di, exist := found[g.UID]
+		di, exist := found[g.ID]
 		if exist {
 			og := groups[di]
 			return NewDuplicateIDError(og, g)
 		}
-		found[g.UID] = i
+		found[g.ID] = i
 	}
 	return nil
 }

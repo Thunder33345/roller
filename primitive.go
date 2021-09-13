@@ -6,8 +6,8 @@ type Group struct {
 	Name string
 	//RefName is a command friendly runtime stable name, should be unique
 	RefName string
-	//UID is the unique identifier for this group used for saving and referencing, must never be changed
-	UID string
+	//ID is the unique identifier for this group used for saving and referencing, must never be changed
+	ID string
 	//Weight dictates the overwriting precedent, where the larger overwrites the smaller
 	//must be unique, otherwise behaviour is undefined
 	Weight int

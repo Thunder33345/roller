@@ -36,7 +36,7 @@ func NewDuplicateIDError(original roller.Group, duplicate roller.Group) Duplicat
 
 func (e DuplicateGroupIDError) Error() string {
 	return fmt.Sprintf("group ID not unique: ID \"%s\"(%s[#%s]) already exist, "+
-		"cant be shared with ID \"%s\"(%s[#%s])", e.g1.UID, e.g1.Name, e.g1.RefName, e.g2.UID, e.g2.Name, e.g2.RefName)
+		"cant be shared with ID \"%s\"(%s[#%s])", e.g1.ID, e.g1.Name, e.g1.RefName, e.g2.ID, e.g2.Name, e.g2.RefName)
 }
 
 func (e DuplicateGroupIDError) Original() roller.Group {
