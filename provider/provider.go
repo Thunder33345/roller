@@ -17,8 +17,11 @@ type GroupStorer interface { //todo set a better name
 //Walker is an iterable provider
 type Walker interface {
 	//WalkGroup will iterate through all the groups with provided callback
-	//if the function returns true, it will halt the process
-	WalkGroup(func(roller.Group) (halt bool)) error
+	//func should take in group as the current group
+	//and last to indicate if this is the last group
+	//if last is true, the callback won't receive any more new groups, and the iteration will end
+	//if the function returns halt as true, it will stop further iteration
+	WalkGroup(func(group roller.Group, last bool) (halt bool)) error
 }
 
 //Saver is a provider that needs manual saving

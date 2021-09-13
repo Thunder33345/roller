@@ -73,9 +73,9 @@ func (j *JSON) RemoveGroup(id string) error {
 	return NewGroupNotFoundError(id)
 }
 
-func (j *JSON) WalkGroup(f func(roller.Group) (halt bool)) error {
-	for _, g := range j.groups {
-		halt := f(g)
+func (j *JSON) WalkGroup(f func(group roller.Group, last bool) (halt bool)) error {
+	for i, g := range j.groups {
+		halt := f(g, len(j.groups)-1 == i)
 		if halt {
 			return nil
 		}
