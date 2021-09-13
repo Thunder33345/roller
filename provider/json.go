@@ -24,8 +24,8 @@ type JSON struct {
 	unsafeSave bool
 }
 
-func NewJSON(file io.ReadWriter, readOnly bool) (*JSON, error) {
-	j := &JSON{file: file, readOnly: readOnly, indent: "\t"}
+func NewJSON(file io.ReadWriter) (*JSON, error) {
+	j := &JSON{file: file, indent: "\t"}
 	if err := j.Load(); err != nil {
 		return nil, err
 	}
