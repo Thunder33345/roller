@@ -89,6 +89,13 @@ func (j *JSON) Load() error {
 		dec.DisallowUnknownFields()
 	}
 
+	switch t := j.file.(type) {
+	case io.Seeker:
+		if _, err := t.Seek(0, 0); err != nil {
+			return err
+		}
+	}
+
 	if !dec.More() {
 		return nil
 	}
@@ -105,7 +112,14 @@ func (j *JSON) Load() error {
 }
 
 func (j *JSON) Reload() error {
-	return j.Load()
+	c := j.groups
+	j.groups = nil
+	err := j.Load()
+	if err != nil {
+		j.groups = c
+		return err
+	}
+	return nil
 }
 
 func (j *JSON) Save() error {
