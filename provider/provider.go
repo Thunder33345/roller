@@ -16,6 +16,7 @@ type GroupStorer interface { //todo set a better name
 
 //Walker is an iterable provider
 type Walker interface {
+	GroupStorer
 	//WalkGroup will iterate through all the groups with provided callback
 	//func should take in group as the current group
 	//and last to indicate if this is the last group
@@ -26,6 +27,7 @@ type Walker interface {
 
 //Saver is a provider that is capable of saving
 type Saver interface {
+	GroupStorer
 	//Save will flush and save internal state
 	Save() error
 }
@@ -33,12 +35,14 @@ type Saver interface {
 //Closer is a provider that needs cleaning up
 //Behaviour is undefined if used after closing
 type Closer interface {
-	//Close will make the close and free all relevant data
+	GroupStorer
+	//Close implementor should explicitly free all relevant data when closed
 	Close() error
 }
 
 //Reloader is a provider that's capable of reinitialize its internal state
 type Reloader interface { //todo set a better name
+	GroupStorer
 	//Reload will reload the provider
 	//if an error is returned, it indicates reload failed
 	//the behaviour of using a provider that failed to reload is up to implementation specifics
