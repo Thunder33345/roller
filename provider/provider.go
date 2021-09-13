@@ -24,7 +24,7 @@ type Walker interface {
 	WalkGroup(func(group roller.Group, last bool) (halt bool)) error
 }
 
-//Saver is a provider that needs manual saving
+//Saver is a provider that is capable of saving
 type Saver interface {
 	//Save will flush and save internal state
 	Save() error
@@ -40,6 +40,10 @@ type Closer interface {
 //Reloader is a provider that's capable of reinitialize its internal state
 type Reloader interface { //todo set a better name
 	//Reload will reload the provider
+	//if an error is returned, it indicates reload failed
+	//the behaviour of using a provider that failed to reload is up to implementation specifics
+	//if possible implementation may attempt to rollback to pre-reloaded state
+	//if rolling back is impossible, implementation may use panic or return error and stay in an unstable state
 	Reload() error
 }
 
