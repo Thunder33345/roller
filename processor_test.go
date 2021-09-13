@@ -362,9 +362,16 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 							Revoke: []string{"foo"},
 						},
 					},
+					"baz": {
+						Weight:     100,
+						Preprocess: true,
+						Entry: Entry{
+							Revoke: []string{"foo", "bar"},
+						},
+					},
 				},
 			},
-			flags:   []string{"foo", "bar"},
+			flags:   []string{"foo", "bar", "baz"},
 			want:    List{Permission: []string{"foo", "bar"}},
 			wantErr: false,
 		},
