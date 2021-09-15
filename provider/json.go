@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/Thunder33345/roller"
 	"io"
+	"sync"
 )
 
 var _ GroupStorer = (*JSON)(nil)
@@ -22,6 +23,7 @@ type JSON struct {
 	//unsafeSave suppresses duplicate uid check when saving
 	//will still push the error down to next load
 	unsafeSave bool
+	m          sync.RWMutex
 }
 
 func NewJSON(file io.ReadWriter) (*JSON, error) {
@@ -41,6 +43,8 @@ func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, in
 }
 
 func (j *JSON) Group(id string) (roller.Group, error) {
+	j.m.RLock()
+	defer j.m.RUnlock()
 	i, g := j.findGroup(id)
 	if i >= 0 {
 		return g, nil
@@ -49,6 +53,8 @@ func (j *JSON) Group(id string) (roller.Group, error) {
 }
 
 func (j *JSON) AddGroup(group roller.Group) error {
+	j.m.Lock()
+	defer j.m.Unlock()
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
@@ -62,6 +68,8 @@ func (j *JSON) AddGroup(group roller.Group) error {
 }
 
 func (j *JSON) RemoveGroup(id string) error {
+	j.m.Lock()
+	defer j.m.Unlock()
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
@@ -74,6 +82,8 @@ func (j *JSON) RemoveGroup(id string) error {
 }
 
 func (j *JSON) WalkGroup(f func(group roller.Group, last bool) (halt bool)) error {
+	j.m.RLock()
+	defer j.m.RUnlock()
 	for i, g := range j.groups {
 		halt := f(g, len(j.groups)-1 == i)
 		if halt {
@@ -112,6 +122,8 @@ func (j *JSON) load() error {
 }
 
 func (j *JSON) Reload() error {
+	j.m.Lock()
+	defer j.m.Unlock()
 	c := j.groups
 	j.groups = nil
 	err := j.load()
@@ -123,6 +135,8 @@ func (j *JSON) Reload() error {
 }
 
 func (j *JSON) Save() error {
+	j.m.RLock()
+	defer j.m.RUnlock()
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
