@@ -26,7 +26,7 @@ type JSON struct {
 
 func NewJSON(file io.ReadWriter) (*JSON, error) {
 	j := &JSON{file: file, indent: "\t"}
-	if err := j.Load(); err != nil {
+	if err := j.load(); err != nil {
 		return nil, err
 	}
 	return j, nil
@@ -34,7 +34,7 @@ func NewJSON(file io.ReadWriter) (*JSON, error) {
 
 func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string, unsafeSave bool) (*JSON, error) {
 	j := &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent, unsafeSave: unsafeSave}
-	if err := j.Load(); err != nil {
+	if err := j.load(); err != nil {
 		return nil, err
 	}
 	return j, nil
@@ -83,7 +83,7 @@ func (j *JSON) WalkGroup(f func(group roller.Group, last bool) (halt bool)) erro
 	return nil
 }
 
-func (j *JSON) Load() error {
+func (j *JSON) load() error {
 	dec := json.NewDecoder(j.file)
 	if !j.allowUnknown {
 		dec.DisallowUnknownFields()
@@ -114,7 +114,7 @@ func (j *JSON) Load() error {
 func (j *JSON) Reload() error {
 	c := j.groups
 	j.groups = nil
-	err := j.Load()
+	err := j.load()
 	if err != nil {
 		j.groups = c
 		return err
