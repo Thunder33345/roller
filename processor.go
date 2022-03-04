@@ -68,15 +68,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 			l = p.processSet(l, v.Entry)
 		}
 	}
-
-	pre, post := p.getFlags(r.Flags, flags)
-	for _, v := range pre {
-		l = p.processSet(l, v.Entry)
-	}
 	l = p.processSet(l, r.Overwrites)
-	for _, v := range post {
-		l = p.processSet(l, v.Entry)
-	}
 	return l, nil
 }
 

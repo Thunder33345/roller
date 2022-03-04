@@ -50,8 +50,6 @@ type RawList struct {
 	Overwrites Entry `json:"overwrites,omitempty"`
 	//Groups are a list of group UUID to inherit permission from
 	Groups []string `json:"groups,omitempty"`
-	//Flags are conditional overwrites for said raw list
-	Flags map[string]FlagEntry `json:"flags,omitempty"`
 }
 
 //List is the compiled result from a RawList
