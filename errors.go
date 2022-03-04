@@ -1,6 +1,32 @@
 package roller
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+//IsErrorNotExist checks if a given error is NotFoundError
+func IsErrorNotExist(err error) bool {
+	return errors.Is(err, notFoundError{})
+}
+
+//NewNotFoundError creates a new NotFoundError with given string as error text
+func NewNotFoundError(str string) error {
+	return notFoundError{err: str}
+}
+
+type notFoundError struct {
+	err string
+}
+
+func (e notFoundError) Error() string {
+	return e.err
+}
+
+func (e notFoundError) Is(err error) bool {
+	_, ok := err.(notFoundError)
+	return ok
+}
 
 var _ error = (*MissingGroupError)(nil) // ensure MissingGroupError implements error
 

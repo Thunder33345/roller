@@ -61,7 +61,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 	for _, g := range gs {
 		pre, post, err2 := p.getFlags(g.ID, flags)
 		if err2 != nil {
-			if ErrorIsNotExist(err2) {
+			if IsErrorNotExist(err2) {
 				continue
 			} else {
 				return List{}, err2
@@ -122,7 +122,7 @@ func (p BasicProcessor) getFlags(gid string, selected []string) (pre []FlagEntry
 		if f, err := p.Provider.Flag(gid, sel); err == nil {
 			fl = append(fl, f)
 		} else {
-			if ErrorIsNotExist(err) {
+			if IsErrorNotExist(err) {
 				continue
 			} else {
 				return nil, nil, err

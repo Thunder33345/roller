@@ -29,7 +29,7 @@ func (d *dummyProvider) Group(uid string) (Group, error) {
 			return v, nil
 		}
 	}
-	return Group{}, NewNotFoundError(errors.New(fmt.Sprintf("group \"%s\" is not defined", uid)))
+	return Group{}, errors.New(fmt.Sprintf("group \"%s\" is not defined", uid))
 }
 
 type dummyProviderWithFlag struct {
@@ -43,7 +43,7 @@ func (d *dummyProviderWithFlag) Flag(gid string, fid string) (FlagEntry, error) 
 	}
 	v, ok := g.Flags[fid]
 	if !ok {
-		return FlagEntry{}, NewNotFoundError(errors.New(fmt.Sprintf("flag \"%s\" in group \"%s\" is not defined", fid, gid)))
+		return FlagEntry{}, NewNotFoundError(fmt.Sprintf("flag \"%s\" in group \"%s\" is not defined", fid, gid))
 	}
 	return v, nil
 }
