@@ -5,52 +5,42 @@ import (
 	"fmt"
 )
 
-//IsErrorNotExist checks if a given error is NotFoundError
-func IsErrorNotExist(err error) bool {
-	return errors.Is(err, notFoundError{})
+//IsMissingFlagError checks if an error is an missingFlagError,
+//missingFlagError are treated specially ignored
+//this is exposed for ease of making a custom processor
+func IsMissingFlagError(err error) bool {
+	mf := &missingFlagError{}
+	r := errors.As(err, &mf)
+	return r
 }
 
-//NewNotFoundError creates a new NotFoundError with given string as error text
-func NewNotFoundError(str string) error {
-	return notFoundError{err: str}
-}
-
-type notFoundError struct {
-	err string
-}
-
-func (e notFoundError) Error() string {
-	return e.err
-}
-
-func (e notFoundError) Is(err error) bool {
-	_, ok := err.(notFoundError)
-	return ok
-}
-
-var _ error = (*MissingGroupError)(nil) // ensure MissingGroupError implements error
-
-//MissingGroupError Is an error raised by Process when group provider fails to load a certain groups
-type MissingGroupError struct {
-	group string
-	error error
-}
-
-func NewMissingGroupsError(gid string, err error) MissingGroupError {
-	return MissingGroupError{
-		group: gid,
-		error: err,
+//NewMissingFlagError creates a new missingFlagError
+//used to signal to processor that the flag is missing, but it's not a critical error
+//see GroupProvider.Flag
+func NewMissingFlagError(group, flag string) error {
+	return missingFlagError{
+		group: group,
+		flag:  flag,
 	}
 }
 
-func (e MissingGroupError) Error() string {
-	return fmt.Sprintf("failed to access group \"%v\": %v", e.Group(), e.error)
+type missingFlagError struct {
+	group, flag string
 }
 
-func (e MissingGroupError) Unwrap() error {
-	return e.error
+func (e missingFlagError) Error() string {
+	return fmt.Sprintf(`missing error: cant find flag "%s" in "%s"`, e.flag, e.group)
 }
 
-func (e MissingGroupError) Group() string {
-	return e.group
+//providerGroupError is an internal error used by BasicProcessor
+type providerGroupError struct {
+	group string
+	cause error
+}
+
+func (e providerGroupError) Error() string {
+	return fmt.Sprintf(`cant retrieve group "%s": %v`, e.group, e.cause)
+}
+func (e providerGroupError) Unwrap() error {
+	return e.cause
 }

@@ -61,7 +61,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 	for _, g := range gs {
 		pre, post, err2 := p.getFlags(g.ID, flags)
 		if err2 != nil {
-			if IsErrorNotExist(err2) {
+			if IsMissingFlagError(err2) {
 				continue
 			} else {
 				return List{}, err2
@@ -93,7 +93,10 @@ func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
 		if err == nil {
 			gs = append(gs, v)
 		} else {
-			return []Group{}, NewMissingGroupsError(gid, err)
+			return []Group{}, providerGroupError{
+				group: gid,
+				cause: err,
+			}
 		}
 	}
 	return gs, nil
@@ -122,7 +125,7 @@ func (p BasicProcessor) getFlags(gid string, selected []string) (pre []FlagEntry
 		if f, err := p.Provider.Flag(gid, sel); err == nil {
 			fl = append(fl, f)
 		} else {
-			if IsErrorNotExist(err) {
+			if IsMissingFlagError(err) {
 				continue
 			} else {
 				return nil, nil, err

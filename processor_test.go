@@ -43,7 +43,7 @@ func (d *dummyProviderWithFlag) Flag(gid string, fid string) (FlagEntry, error) 
 	}
 	v, ok := g.Flags[fid]
 	if !ok {
-		return FlagEntry{}, NewNotFoundError(fmt.Sprintf("flag \"%s\" in group \"%s\" is not defined", fid, gid))
+		return FlagEntry{}, NewMissingFlagError(gid, fid)
 	}
 	return v, nil
 }
@@ -275,11 +275,10 @@ func TestBasicProcessor_Process(t *testing.T) {
 		}
 		_, err := p.Process(RawList{Groups: []string{"1", "2"}})
 		a.Error(err)
-		me := MissingGroupError{}
-		errors.As(err, &me)
-		a.Equal("2", me.Group())
-		a.Equal(fmt.Sprintf("group \"2\" is not defined"), me.Unwrap().Error())
-		a.Equal("failed to access group \"2\": group \"2\" is not defined", me.Error())
+		ge := providerGroupError{}
+		errors.As(err, &ge)
+		a.Equal("2", ge.group)
+		a.Equal("cant retrieve group \"2\": group \"2\" is not defined", ge.Error())
 	})
 }
 
