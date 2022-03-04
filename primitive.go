@@ -13,8 +13,6 @@ type Group struct {
 	Weight int `json:"weight"`
 	//Permission is the permission that is used
 	Permission Entry `json:"permission,omitempty"`
-	//Flags are conditional Entry that only applies in certain situations
-	Flags map[string]FlagEntry `json:"flags,omitempty"`
 }
 
 //Entry represent a collection of permissions and flags

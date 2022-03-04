@@ -59,7 +59,14 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 
 	var l List
 	for _, g := range gs {
-		pre, post := p.getFlags(g.Flags, flags)
+		pre, post, err2 := p.getFlags(g.ID, flags)
+		if err2 != nil {
+			if ErrorIsNotExist(err2) {
+				continue
+			} else {
+				return List{}, err2
+			}
+		}
 		for _, v := range pre {
 			l = p.processSet(l, v.Entry)
 		}
@@ -109,11 +116,17 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 }
 
 //getFlags tries to get all selected flags from the map then return the sorted slice into preprocess and postprocess
-func (p BasicProcessor) getFlags(flags map[string]FlagEntry, selected []string) (pre []FlagEntry, post []FlagEntry) {
+func (p BasicProcessor) getFlags(gid string, selected []string) (pre []FlagEntry, post []FlagEntry, xErr error) {
 	fl := make([]FlagEntry, 0, len(selected))
 	for _, sel := range selected {
-		if f, ok := flags[sel]; ok {
+		if f, err := p.Provider.Flag(gid, sel); err == nil {
 			fl = append(fl, f)
+		} else {
+			if ErrorIsNotExist(err) {
+				continue
+			} else {
+				return nil, nil, err
+			}
 		}
 	}
 	sort.Slice(fl, func(i, j int) bool {
@@ -126,7 +139,7 @@ func (p BasicProcessor) getFlags(flags map[string]FlagEntry, selected []string) 
 			post = append(post, f)
 		}
 	}
-	return pre, post
+	return pre, post, nil
 }
 
 //removeNodes removes needles from a specified stack,

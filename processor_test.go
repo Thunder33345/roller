@@ -10,8 +10,17 @@ import (
 	"testing"
 )
 
+type testGroup struct {
+	Group
+	Flags map[string]FlagEntry
+}
+
 type dummyProvider struct {
 	groups []Group
+}
+
+func (d *dummyProvider) Flag(gid string, fid string) (FlagEntry, error) {
+	panic("Flag() unsupported!")
 }
 
 func (d *dummyProvider) Group(uid string) (Group, error) {
@@ -20,7 +29,40 @@ func (d *dummyProvider) Group(uid string) (Group, error) {
 			return v, nil
 		}
 	}
-	return Group{}, errors.New(fmt.Sprintf("group \"%s\" is not defined", uid))
+	return Group{}, NewNotFoundError(errors.New(fmt.Sprintf("group \"%s\" is not defined", uid)))
+}
+
+type dummyProviderWithFlag struct {
+	groups []testGroup
+}
+
+func (d *dummyProviderWithFlag) Flag(gid string, fid string) (FlagEntry, error) {
+	g, e := d.group(gid)
+	if e != nil {
+		return FlagEntry{}, e
+	}
+	v, ok := g.Flags[fid]
+	if !ok {
+		return FlagEntry{}, NewNotFoundError(errors.New(fmt.Sprintf("flag \"%s\" in group \"%s\" is not defined", fid, gid)))
+	}
+	return v, nil
+}
+
+func (d *dummyProviderWithFlag) Group(uid string) (Group, error) {
+	g, e := d.group(uid)
+	if e == nil {
+		return g.Group, e
+	}
+	return Group{}, e
+}
+
+func (d *dummyProviderWithFlag) group(uid string) (testGroup, error) {
+	for _, v := range d.groups {
+		if v.ID == uid {
+			return v, nil
+		}
+	}
+	return testGroup{}, errors.New(fmt.Sprintf("group \"%s\" is not defined", uid))
 }
 
 func TestBasicProcessor_Process(t *testing.T) {
@@ -243,7 +285,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 
 func TestBasicProcessor_ProcessFlags(t *testing.T) {
 	type fields struct {
-		Groups          []Group
+		Groups          []testGroup
 		WeightAscending bool
 	}
 	tests := []struct {
@@ -256,12 +298,14 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 	}{
 		{
 			name: "Simple flags",
-			fields: fields{Groups: []Group{
+			fields: fields{Groups: []testGroup{
 				{
-					ID: "1", Weight: 100, Permission: Entry{
-						Level:  10,
-						Grant:  []string{"1.1", "1fs.1"},
-						Revoke: []string{"2.2", "o.1"},
+					Group: Group{
+						ID: "1", Weight: 100, Permission: Entry{
+							Level:  10,
+							Grant:  []string{"1.1", "1fs.1"},
+							Revoke: []string{"2.2", "o.1"},
+						},
 					},
 					Flags: map[string]FlagEntry{
 						"f1": {
@@ -283,11 +327,13 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 					},
 				},
 				{
-					ID: "2", Weight: 50, Permission: Entry{
-						Level:    5,
-						SetLevel: true,
-						Grant:    []string{"2.1", "2.2"},
-						Revoke:   []string{"1.1"},
+					Group: Group{
+						ID: "2", Weight: 50, Permission: Entry{
+							Level:    5,
+							SetLevel: true,
+							Grant:    []string{"2.1", "2.2"},
+							Revoke:   []string{"1.1"},
+						},
 					},
 					Flags: map[string]FlagEntry{
 						"f1": {
@@ -307,7 +353,11 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 							},
 						}},
 				}, {
-					ID: "3", Weight: 10, Flags: map[string]FlagEntry{
+					Group: Group{
+						ID:     "3",
+						Weight: 10,
+					},
+					Flags: map[string]FlagEntry{
 						"f3": {
 							Weight:     100,
 							Preprocess: true,
@@ -324,18 +374,11 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 					Revoke: []string{"o.1"},
 				},
 				Groups: []string{"1", "2", "3"},
-				Flags: map[string]FlagEntry{
-					"f3": {
-						Weight:     10,
-						Preprocess: false,
-						Entry:      Entry{Grant: []string{"self"}},
-					},
-				},
 			},
 			flags: []string{"f1", "f2", "f3"},
 			want: List{
 				Level:      20,
-				Permission: []string{"3f3", "2f1.1", "2.1", "1.1", "1f1.1", "o.1", "self"},
+				Permission: []string{"3f3", "2f1.1", "2.1", "1.1", "1f1.1", "o.1"},
 			},
 		}, {
 			name: "Want error",
@@ -343,44 +386,13 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 				Groups: []string{"1"},
 			},
 			wantErr: true,
-		}, {
-			name: "self test",
-			r: RawList{
-				Flags: map[string]FlagEntry{
-					"foo": {
-						Weight:     100,
-						Preprocess: false,
-						Entry: Entry{
-							Grant: []string{"foo"},
-						},
-					},
-					"bar": {
-						Weight:     99,
-						Preprocess: false,
-						Entry: Entry{
-							Grant:  []string{"bar"},
-							Revoke: []string{"foo"},
-						},
-					},
-					"baz": {
-						Weight:     100,
-						Preprocess: true,
-						Entry: Entry{
-							Revoke: []string{"foo", "bar"},
-						},
-					},
-				},
-			},
-			flags:   []string{"foo", "bar", "baz"},
-			want:    List{Permission: []string{"foo", "bar"}},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := assert.New(t)
 			p := BasicProcessor{
-				Provider:        &dummyProvider{groups: tt.fields.Groups},
+				Provider:        &dummyProviderWithFlag{groups: tt.fields.Groups},
 				WeightAscending: tt.fields.WeightAscending,
 			}
 			got, err := p.ProcessFlags(tt.r, tt.flags...)
@@ -427,6 +439,22 @@ func TestBasicProcessor_MergeEntry(t *testing.T) {
 			want: List{
 				Level:      7,
 				Permission: []string{"o.1", "1.1", "1.2", "2.1"},
+			},
+		}, {
+			name: "Merge grant revoke",
+			args: args{
+				l: List{
+					Permission: []string{"o.1"},
+				},
+				es: []Entry{
+					{
+						Grant:  []string{"2.1"},
+						Revoke: []string{"2.1"},
+					},
+				},
+			},
+			want: List{
+				Permission: []string{"o.1", "2.1"},
 			},
 		},
 	}
