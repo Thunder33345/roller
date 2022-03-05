@@ -30,7 +30,7 @@ type Entry struct {
 	Revoke []string `json:"revoke,omitempty"`
 }
 
-//FlagEntry is an Entry but inside a Group.Flags
+//FlagEntry is an Entry but as part of a Group's Flags
 //its same as Entry byt with extra flag only fields
 type FlagEntry struct {
 	//Weight dictates the overwriting precedent, must be unique, otherwise behaviour is undefined

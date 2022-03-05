@@ -61,11 +61,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 	for _, g := range gs {
 		pre, post, err2 := p.getFlags(g.ID, flags)
 		if err2 != nil {
-			if IsMissingFlagError(err2) {
-				continue
-			} else {
-				return List{}, err2
-			}
+			return List{}, err2
 		}
 		for _, v := range pre {
 			l = p.processSet(l, v.Entry)
@@ -122,14 +118,10 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 func (p BasicProcessor) getFlags(gid string, selected []string) (pre []FlagEntry, post []FlagEntry, xErr error) {
 	fl := make([]FlagEntry, 0, len(selected))
 	for _, sel := range selected {
-		if f, err := p.Provider.Flag(gid, sel); err == nil {
+		if f, found, err := p.Provider.Flag(gid, sel); found && err == nil {
 			fl = append(fl, f)
 		} else {
-			if IsMissingFlagError(err) {
-				continue
-			} else {
-				return nil, nil, err
-			}
+			return nil, nil, err
 		}
 	}
 	sort.Slice(fl, func(i, j int) bool {

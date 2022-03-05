@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-var _ roller.GroupProvider = (GroupStorer)(nil)
+//var _ roller.GroupProvider = (GroupStorer)(nil)
 
 //GroupStorer is something that is capable of store and provide groups
 type GroupStorer interface { //todo set a better name

@@ -19,10 +19,6 @@ type dummyProvider struct {
 	groups []Group
 }
 
-func (d *dummyProvider) Flag(gid string, fid string) (FlagEntry, error) {
-	panic("Flag() unsupported!")
-}
-
 func (d *dummyProvider) Group(uid string) (Group, error) {
 	for _, v := range d.groups {
 		if v.ID == uid {
@@ -32,20 +28,21 @@ func (d *dummyProvider) Group(uid string) (Group, error) {
 	return Group{}, errors.New(fmt.Sprintf("group \"%s\" is not defined", uid))
 }
 
+func (d *dummyProvider) Flag(_ string, _ string) (FlagEntry, bool, error) {
+	panic("Flag() unsupported!")
+}
+
 type dummyProviderWithFlag struct {
 	groups []testGroup
 }
 
-func (d *dummyProviderWithFlag) Flag(gid string, fid string) (FlagEntry, error) {
+func (d *dummyProviderWithFlag) Flag(gid string, fid string) (FlagEntry, bool, error) {
 	g, e := d.group(gid)
 	if e != nil {
-		return FlagEntry{}, e
+		return FlagEntry{}, false, e
 	}
 	v, ok := g.Flags[fid]
-	if !ok {
-		return FlagEntry{}, NewMissingFlagError(gid, fid)
-	}
-	return v, nil
+	return v, ok, nil
 }
 
 func (d *dummyProviderWithFlag) Group(uid string) (Group, error) {
