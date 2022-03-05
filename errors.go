@@ -10,7 +10,7 @@ import (
 //this is exposed for ease of making a custom processor
 func IsMissingFlagError(err error) bool {
 	mf := &missingFlagError{}
-	r := errors.As(err, &mf)
+	r := errors.As(err, mf)
 	return r
 }
 
