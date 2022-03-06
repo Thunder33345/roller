@@ -18,14 +18,14 @@ type Group struct {
 
 //Entry represent a collection of permissions and flags
 type Entry struct {
-	//EmptySet will discard all previously granted permissions
+	//EmptySet discard all previously granted permissions
 	EmptySet bool `json:"empty_set,omitempty"`
 	//Level will be added into List.Level, this can be used to compare hierarchy
 	//negatives will subtract from level instead
 	Level int `json:"level,omitempty"`
 	//SetLevel sets and overwrite the Level of List.Level instead of adding or adding
 	SetLevel bool `json:"set_level,omitempty"`
-	//Grant will add permissions to the List
+	//Grant adds permissions to the List
 	//grants will be processed after revokes
 	Grant []string `json:"grant,omitempty"`
 	//Revoke will revoke a permissions that are granted to the List by a prior group
