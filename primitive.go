@@ -8,10 +8,11 @@ type Group struct {
 	RefName string `json:"ref_name"`
 	//ID is the unique identifier for this group used for saving and referencing, must never be changed
 	ID string `json:"id"`
-	//Weight dictates the overwriting precedent, where the larger overwrites the smaller
+	//Weight dictates the order of overwriting precedent, by default the larger gets applied after the smaller ones
 	//must be unique, otherwise behaviour is undefined
+	//this does not define the rank/hierarchy of a group, use Entry.Level instead
 	Weight int `json:"weight"`
-	//Permission is the permission that is used
+	//Permission will be given for said group holder
 	Permission Entry `json:"permission,omitempty"`
 }
 
@@ -19,32 +20,33 @@ type Group struct {
 type Entry struct {
 	//EmptySet will discard all previously granted permissions
 	EmptySet bool `json:"empty_set,omitempty"`
-	//Level is the default power level of said entry
-	//Only the highest group's level is in used
+	//Level will be added into List.Level, this can be used to compare hierarchy
+	//negatives will subtract from level instead
 	Level int `json:"level,omitempty"`
-	//SetLevel makes overwrites the Level instead of adding or subtracting from last level
+	//SetLevel sets and overwrite the Level of List.Level instead of adding or adding
 	SetLevel bool `json:"set_level,omitempty"`
 	//Grant will add permissions to the List
+	//grants will be processed after revokes
 	Grant []string `json:"grant,omitempty"`
-	//Revoke will revoke a permissions that is granted to the List by a prior group
+	//Revoke will revoke a permissions that are granted to the List by a prior group
 	Revoke []string `json:"revoke,omitempty"`
 }
 
 //FlagEntry is an Entry but as part of a Group's Flags
 //its same as Entry byt with extra flag only fields
 type FlagEntry struct {
-	//Weight dictates the overwriting precedent, must be unique, otherwise behaviour is undefined
-	//behaviour is defined by processor
+	//Weight dictates the order of overwriting precedent, by default the larger gets applied after the smaller ones
+	//must be unique, otherwise behaviour is undefined
 	Weight int `json:"weight"`
 	//Preprocess indicates that this should be processed before Group.Permission
 	Preprocess bool `json:"preprocess,omitempty"`
 	Entry
 }
 
-//RawList is the raw save state for List
+//RawList is the preprocessed save state for List
 type RawList struct {
 	//Overwrites has the highest precedent
-	//Will overwrite all group based permissions
+	//Will be applied after all group based permissions
 	Overwrites Entry `json:"overwrites,omitempty"`
 	//Groups are a list of group UUID to inherit permission from
 	Groups []string `json:"groups,omitempty"`
@@ -54,6 +56,7 @@ type RawList struct {
 type List struct {
 	//Level is the final applicable level
 	Level int `json:"level,omitempty"`
-	//Permission is th final applicable permission
+	//Permission is the list of permissions that are applicable
+	//only grants that aren't revoked will be stored in the list
 	Permission []string `json:"permission,omitempty"`
 }

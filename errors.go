@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-//providerGroupError is an internal error used by BasicProcessor
+//providerGroupError is an error used by BasicProcessor when Provider cannot retrieve a certain group
 type providerGroupError struct {
 	group string
 	cause error
