@@ -85,10 +85,7 @@ func (j ImplicitComparator) HasPermission(p List, node string) bool {
 
 //HasPermissionWithLevel fuzzy checks if List contains the node, and their level is at least N
 func (j ImplicitComparator) HasPermissionWithLevel(p List, node string, level int) bool {
-	if p.Level <= level {
-		return false
-	}
-	return j.HasPermission(p, node)
+	return p.Level >= level && j.HasPermission(p, node)
 }
 
 //IsHigherLevel compares if source List's level is more than subject List
