@@ -132,8 +132,10 @@ func (p BasicProcessor) processSet(l List, set Entry) List {
 func (p BasicProcessor) getFlags(gid string, selected []string) (pre []FlagEntry, post []FlagEntry, xErr error) {
 	fl := make([]FlagEntry, 0, len(selected))
 	for _, sel := range selected {
-		if f, found, err := p.Provider.Flag(gid, sel); found && err == nil {
-			fl = append(fl, f)
+		if f, found, err := p.Provider.Flag(gid, sel); err == nil {
+			if found {
+				fl = append(fl, f)
+			}
 		} else {
 			return nil, nil, err
 		}
