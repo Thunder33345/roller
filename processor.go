@@ -69,7 +69,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 
 	var l List
 	for _, g := range gs {
-		pre, post, err2 := p.getFlags(g.ID, flags)
+		pre, post, err2 := p.getFlags(g.id, flags)
 		if err2 != nil {
 			return List{}, err2
 		}
@@ -95,18 +95,17 @@ func (p BasicProcessor) MergeEntry(l List, es ...Entry) List {
 
 //getGroups returns a list of Group from a list of GroupID
 //returns error if there's any issues with the provider
-func (p BasicProcessor) getGroups(r []string) ([]Group, error) {
-	var gs []Group
+func (p BasicProcessor) getGroups(r []string) ([]keyedGroup, error) {
+	var gs []keyedGroup
 	for _, gid := range r {
 		v, err := p.Provider.Group(gid)
-		if err == nil {
-			gs = append(gs, v)
-		} else {
-			return []Group{}, providerGroupError{
+		if err != nil {
+			return nil, providerGroupError{
 				group: gid,
 				cause: err,
 			}
 		}
+		gs = append(gs, keyedGroup{id: gid, Group: v})
 	}
 	return gs, nil
 }
@@ -170,4 +169,9 @@ func (p BasicProcessor) removeNodes(stack []string, needle []string) []string {
 		}
 	}
 	return ret
+}
+
+type keyedGroup struct {
+	id string
+	Group
 }

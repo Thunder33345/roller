@@ -6,8 +6,6 @@ type Group struct {
 	Name string `json:"name"`
 	//RefName is a command friendly runtime stable name, should be unique
 	RefName string `json:"ref_name"`
-	//ID is the unique identifier for this group used for saving and referencing, must never be changed
-	ID string `json:"id"`
 	//Weight dictates the order of overwriting precedent, by default the larger gets applied after the smaller ones
 	//must be unique, otherwise behaviour is undefined
 	//this does not define the rank/hierarchy of a group, use Entry.Level instead

@@ -12,17 +12,18 @@ import (
 
 type testGroup struct {
 	Group
+	ID    string
 	Flags map[string]FlagEntry
 }
 
 type dummyProvider struct {
-	groups []Group
+	groups []testGroup
 }
 
 func (d *dummyProvider) Group(uid string) (Group, error) {
 	for _, v := range d.groups {
 		if v.ID == uid {
-			return v, nil
+			return v.Group, nil
 		}
 	}
 	return Group{}, errors.New(fmt.Sprintf("group \"%s\" is not defined", uid))
@@ -64,7 +65,7 @@ func (d *dummyProviderWithFlag) group(uid string) (testGroup, error) {
 
 func TestBasicProcessor_Process(t *testing.T) {
 	type fields struct {
-		Groups          []Group
+		Groups          []testGroup
 		WeightAscending bool
 	}
 	tests := []struct {
@@ -76,27 +77,27 @@ func TestBasicProcessor_Process(t *testing.T) {
 	}{
 		{
 			name: "Simple 1",
-			fields: fields{Groups: []Group{
+			fields: fields{Groups: []testGroup{
 				{
-					ID: "1", Weight: 1000, Permission: Entry{
+					ID: "1", Group: Group{Weight: 1000, Permission: Entry{
 						Level:  10,
 						Grant:  []string{"1.1", "1.2"},
 						Revoke: []string{"3.3", "2.2", "o.2"},
-					},
+					}},
 				},
 				{
-					ID: "2", Weight: 800, Permission: Entry{
+					ID: "2", Group: Group{Weight: 800, Permission: Entry{
 						Level:    5,
 						SetLevel: true,
 						Grant:    []string{"2.1", "2.2"},
 						Revoke:   []string{"3.2", "1.2"},
-					},
+					}},
 				}, {
-					ID: "3", Weight: 500, Permission: Entry{
+					ID: "3", Group: Group{Weight: 500, Permission: Entry{
 						Level:  4,
 						Grant:  []string{"3.1", "3.2", "3.3"},
 						Revoke: []string{"2.1"},
-					},
+					}},
 				},
 			}},
 			r: RawList{
@@ -113,19 +114,19 @@ func TestBasicProcessor_Process(t *testing.T) {
 			},
 		}, {
 			name: "Simple 2",
-			fields: fields{Groups: []Group{
+			fields: fields{Groups: []testGroup{
 				{
-					ID: "1", Weight: 2, Permission: Entry{
+					ID: "1", Group: Group{Weight: 2, Permission: Entry{
 						Level:  1,
 						Grant:  []string{"1", "1.2", "1.3", "self.revoke"},
 						Revoke: []string{"2.4"},
-					},
+					}},
 				}, {
-					ID: "2", Weight: 1, Permission: Entry{
+					ID: "2", Group: Group{Weight: 1, Permission: Entry{
 						Level:  2,
 						Grant:  []string{"2", "2.2", "2.3", "2.4"},
 						Revoke: []string{"1.3"},
-					},
+					}},
 				},
 			}},
 			r: RawList{
@@ -144,46 +145,42 @@ func TestBasicProcessor_Process(t *testing.T) {
 		}, {
 			name: "3rd test",
 			fields: fields{
-				Groups: []Group{
+				Groups: []testGroup{
 					{
-						ID:     "-1",
-						Weight: -1,
-						Permission: Entry{
-							Level: 100,
-							Grant: []string{"-1.test"},
-						},
+						ID: "-1",
+						Group: Group{Weight: -1,
+							Permission: Entry{
+								Level: 100,
+								Grant: []string{"-1.test"},
+							}},
 					}, {
-						ID:     "0",
-						Weight: 0,
-						Permission: Entry{
+						ID: "0",
+						Group: Group{Weight: 0, Permission: Entry{
 							Level: -50,
 							Grant: []string{"0.test"},
-						},
+						}},
 					}, {
-						ID:     "1",
-						Weight: 2,
-						Permission: Entry{
+						ID: "1",
+						Group: Group{Weight: 2, Permission: Entry{
 							EmptySet: true,
 							SetLevel: true,
 							Level:    -5,
 							Grant:    []string{"1.1", "1.2"},
-						},
+						}},
 					}, {
-						ID:     "2",
-						Weight: 3,
-						Permission: Entry{
+						ID: "2",
+						Group: Group{Weight: 3, Permission: Entry{
 							Level:  2,
 							Grant:  []string{"2.1", "2.2", "2.3"},
 							Revoke: []string{"1.2"},
-						},
+						}},
 					}, {
-						ID:     "3",
-						Weight: 4,
-						Permission: Entry{
+						ID: "3",
+						Group: Group{Weight: 4, Permission: Entry{
 							Level:  -1,
 							Grant:  []string{"3.1"},
 							Revoke: []string{"2.3"},
-						},
+						}},
 					},
 				},
 			},
@@ -202,33 +199,31 @@ func TestBasicProcessor_Process(t *testing.T) {
 		}, {
 			name: "4th Reverse",
 			fields: fields{
-				WeightAscending: true, Groups: []Group{
+				WeightAscending: true, Groups: []testGroup{
 					{
-						ID:     "1",
-						Weight: -1,
-						Permission: Entry{
+						ID: "1",
+						Group: Group{Weight: -1, Permission: Entry{
 							Level:    5,
 							SetLevel: true,
 							Grant:    []string{"1.1", "1.2"},
 							Revoke:   []string{"low.2"},
 						},
-					}, {
-						ID:     "2",
-						Weight: -2,
-						Permission: Entry{
+						}},
+					{
+						ID: "2",
+						Group: Group{Weight: -2, Permission: Entry{
 							Level:    2,
 							SetLevel: false,
 							Grant:    []string{"2.1", "2.2"},
 							Revoke:   []string{"1.2"},
-						},
+						}},
 					}, {
-						ID:     "3",
-						Weight: 10,
-						Permission: Entry{
+						ID: "3",
+						Group: Group{Weight: 10, Permission: Entry{
 							Level:  -10,
 							Grant:  []string{"low.1", "low.2"},
 							Revoke: []string{"1.1"},
-						},
+						}},
 					},
 				},
 			},
@@ -268,7 +263,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 	t.Run("Missing", func(t *testing.T) {
 		a := assert.New(t)
 		p := BasicProcessor{
-			Provider: &dummyProvider{groups: []Group{{ID: "1"}}},
+			Provider: &dummyProvider{groups: []testGroup{{ID: "1"}}},
 		}
 		_, err := p.Process(RawList{Groups: []string{"1", "2"}})
 		a.Error(err)
@@ -296,8 +291,9 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 			name: "Simple flags",
 			fields: fields{Groups: []testGroup{
 				{
+					ID: "1",
 					Group: Group{
-						ID: "1", Weight: 100, Permission: Entry{
+						Weight: 100, Permission: Entry{
 							Level:  10,
 							Grant:  []string{"1.1", "1fs.1"},
 							Revoke: []string{"2.2", "o.1"},
@@ -323,8 +319,9 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 					},
 				},
 				{
+					ID: "2",
 					Group: Group{
-						ID: "2", Weight: 50, Permission: Entry{
+						Weight: 50, Permission: Entry{
 							Level:    5,
 							SetLevel: true,
 							Grant:    []string{"2.1", "2.2"},
@@ -349,8 +346,8 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 							},
 						}},
 				}, {
+					ID: "3",
 					Group: Group{
-						ID:     "3",
 						Weight: 10,
 					},
 					Flags: map[string]FlagEntry{
@@ -708,48 +705,49 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 	i3 := randSlice(100, 25)
 	i4 := randSlice(150, 25)
 	p := BasicProcessor{
-		Provider: &dummyProvider{groups: []Group{
+		Provider: &dummyProvider{groups: []testGroup{
 			{
-				ID:     "-1",
-				Weight: -1,
-				Permission: Entry{
-					Level: 100,
-					Grant: i1,
+				ID: "-1",
+				Group: Group{Weight: -1,
+					Permission: Entry{
+						Level: 100,
+						Grant: i1,
+					},
 				},
 			}, {
-				ID:     "0",
-				Weight: 0,
-				Permission: Entry{
-					Level:  -50,
-					Grant:  i2,
-					Revoke: randNeedles(i1, len(i1)/3),
-				},
+				ID: "0",
+				Group: Group{Weight: 0,
+					Permission: Entry{
+						Level:  -50,
+						Grant:  i2,
+						Revoke: randNeedles(i1, len(i1)/3),
+					},
+				}}, {
+				ID: "1",
+				Group: Group{Weight: 2,
+					Permission: Entry{
+						EmptySet: true,
+						SetLevel: true,
+						Level:    -5,
+						Grant:    append([]string{"1.1", "1.2"}, i3...),
+					}},
 			}, {
-				ID:     "1",
-				Weight: 2,
-				Permission: Entry{
-					EmptySet: true,
-					SetLevel: true,
-					Level:    -5,
-					Grant:    append([]string{"1.1", "1.2"}, i3...),
-				},
-			}, {
-				ID:     "2",
-				Weight: 3,
-				Permission: Entry{
-					Level:  2,
-					Grant:  i4,
-					Revoke: randNeedles(i3, len(i3)/3),
-				},
-			}, {
-				ID:     "3",
-				Weight: 4,
-				Permission: Entry{
-					Level:  -1,
-					Grant:  []string{"3.1"},
-					Revoke: randNeedles(i4, len(i4)/2),
-				},
-			},
+				ID: "2",
+				Group: Group{Weight: 3,
+					Permission: Entry{
+						Level:  2,
+						Grant:  i4,
+						Revoke: randNeedles(i3, len(i3)/3),
+					},
+				}}, {
+				ID: "3",
+				Group: Group{Weight: 4,
+					Permission: Entry{
+						Level:  -1,
+						Grant:  []string{"3.1"},
+						Revoke: randNeedles(i4, len(i4)/2),
+					},
+				}},
 		}},
 	}
 	r := RawList{
@@ -782,17 +780,19 @@ func BenchmarkBasicProcessor_ProcessMulti(b *testing.B) {
 	})
 }
 
-func genGroups(entry []Entry) ([]Group, []string) {
-	var gs []Group
+func genGroups(entry []Entry) ([]testGroup, []string) {
+	var gs []testGroup
 	var ids []string
 
 	for _, e := range entry {
 		str := randStringBytes(5)
 		ids = append(ids, str)
-		gs = append(gs, Group{
-			ID:         str,
-			Weight:     rand.Intn(1000),
-			Permission: e,
+		gs = append(gs, testGroup{
+			ID: str,
+			Group: Group{
+				Weight:     rand.Intn(1000),
+				Permission: e,
+			},
 		})
 	}
 	return gs, ids
