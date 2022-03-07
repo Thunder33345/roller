@@ -100,7 +100,7 @@ func TestExplicitComparator_HasPermissionWithLevel(t *testing.T) {
 				node:  "foo.bar",
 				level: 5,
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "Higher level",
@@ -144,7 +144,7 @@ func TestExplicitComparator_HasPermissionWithLevel(t *testing.T) {
 				node:  "foo.bar",
 				level: -5,
 			},
-			want: false,
+			want: true,
 		}, {
 			name: "Negative low level",
 			args: args{
@@ -393,7 +393,7 @@ func TestImplicitComparator_HasPermissionWithLevel(t *testing.T) {
 				node:  "foo.bar",
 				level: 5,
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "Higher level",
@@ -437,7 +437,7 @@ func TestImplicitComparator_HasPermissionWithLevel(t *testing.T) {
 				node:  "foo.bar",
 				level: -5,
 			},
-			want: false,
+			want: true,
 		}, {
 			name: "Negative low level",
 			args: args{
