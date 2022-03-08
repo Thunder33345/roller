@@ -101,7 +101,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 				},
 			}},
 			r: RawList{
-				Overwrites: Entry{
+				Overwrite: Entry{
 					Level:  3,
 					Grant:  []string{"o.1", "o.2"},
 					Revoke: []string{"o.1"},
@@ -130,7 +130,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 				},
 			}},
 			r: RawList{
-				Overwrites: Entry{
+				Overwrite: Entry{
 					Level:  10,
 					Grant:  []string{"self.grant", "self.order"},
 					Revoke: []string{"self.revoke", "self.order", "self.404"},
@@ -185,7 +185,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 				},
 			},
 			r: RawList{
-				Overwrites: Entry{
+				Overwrite: Entry{
 					Level: 50,
 					Grant: []string{"r.1"},
 				},
@@ -228,7 +228,7 @@ func TestBasicProcessor_Process(t *testing.T) {
 				},
 			},
 			r: RawList{
-				Overwrites: Entry{
+				Overwrite: Entry{
 					Level: -1,
 					Grant: []string{"self"},
 				},
@@ -361,7 +361,7 @@ func TestBasicProcessor_ProcessFlags(t *testing.T) {
 				},
 			}},
 			r: RawList{
-				Overwrites: Entry{
+				Overwrite: Entry{
 					Level:  3,
 					Grant:  []string{"o.1"},
 					Revoke: []string{"o.1"},
@@ -751,7 +751,7 @@ func BenchmarkBasicProcessor_Process(b *testing.B) {
 		}},
 	}
 	r := RawList{
-		Overwrites: Entry{
+		Overwrite: Entry{
 			Level: 50,
 			Grant: []string{"r.1"},
 		},

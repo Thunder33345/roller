@@ -43,9 +43,9 @@ type FlagEntry struct {
 
 //RawList is the preprocessed save state for List
 type RawList struct {
-	//Overwrites has the highest precedent
+	//Overwrite has the highest precedent
 	//Will be applied after all group based permissions
-	Overwrites Entry `json:"overwrites,omitempty"`
+	Overwrite Entry `json:"overwrites,omitempty"`
 	//Groups are a list of group UUID to inherit permission from
 	Groups []string `json:"groups,omitempty"`
 }

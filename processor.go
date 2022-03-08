@@ -52,7 +52,7 @@ func (p BasicProcessor) Process(r RawList) (List, error) {
 	for _, g := range gs {
 		l = p.processSet(l, g.Permission)
 	}
-	l = p.processSet(l, r.Overwrites)
+	l = p.processSet(l, r.Overwrite)
 	return l, nil
 }
 
@@ -81,7 +81,7 @@ func (p BasicProcessor) ProcessFlags(r RawList, flags ...string) (List, error) {
 			l = p.processSet(l, v.Entry)
 		}
 	}
-	l = p.processSet(l, r.Overwrites)
+	l = p.processSet(l, r.Overwrite)
 	return l, nil
 }
 
