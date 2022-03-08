@@ -48,7 +48,7 @@ func (j *JSON) Group(groupID string) (roller.Group, error) {
 	if ok {
 		return d.Group, nil
 	}
-	return roller.Group{}, NewGroupNotFoundError(groupID)
+	return roller.Group{}, groupNotFoundError{id: groupID}
 }
 
 func (j *JSON) Flag(gid string, fid string) (roller.FlagEntry, bool, error) {
@@ -56,7 +56,7 @@ func (j *JSON) Flag(gid string, fid string) (roller.FlagEntry, bool, error) {
 	defer j.m.Unlock()
 	d, ok := j.groups[gid]
 	if !ok {
-		return roller.FlagEntry{}, false, NewGroupNotFoundError(gid)
+		return roller.FlagEntry{}, false, groupNotFoundError{id: gid}
 	}
 	f, ok := d.Flags[fid]
 	return f, ok, nil
@@ -66,7 +66,7 @@ func (j *JSON) SetGroup(groupID string, group roller.Group) error {
 	j.m.Lock()
 	defer j.m.Unlock()
 	if j.readOnly {
-		return ReadOnlyError{}
+		return readOnlyError{}
 	}
 	j.groups[groupID] = &groupData{
 		Flags:      nil,
@@ -81,7 +81,7 @@ func (j *JSON) RemoveGroup(id string) error {
 	j.m.Lock()
 	defer j.m.Unlock()
 	if j.readOnly {
-		return ReadOnlyError{}
+		return readOnlyError{}
 	}
 	delete(j.groups, id)
 	j.updateOrder(id, false)
@@ -92,11 +92,11 @@ func (j *JSON) SetFlag(groupID string, flagID string, flag roller.FlagEntry) err
 	j.m.Lock()
 	defer j.m.Unlock()
 	if j.readOnly {
-		return ReadOnlyError{}
+		return readOnlyError{}
 	}
 	d, ok := j.groups[groupID]
 	if !ok {
-		return NewGroupNotFoundError(groupID)
+		return groupNotFoundError{id: groupID}
 	}
 	if d.Flags == nil {
 		d.Flags = make(map[string]roller.FlagEntry)
@@ -111,11 +111,11 @@ func (j *JSON) RemoveFlag(groupID string, flagID string) error {
 	j.m.Lock()
 	defer j.m.Unlock()
 	if j.readOnly {
-		return ReadOnlyError{}
+		return readOnlyError{}
 	}
 	d, ok := j.groups[groupID]
 	if !ok {
-		return NewGroupNotFoundError(groupID)
+		return groupNotFoundError{id: groupID}
 	}
 	delete(d.Flags, flagID)
 	d.updateOrder(flagID, false)
@@ -141,7 +141,7 @@ func (j *JSON) WalkFlags(groupID string, f func(flag roller.FlagEntry, last bool
 	defer j.m.RUnlock()
 	d, ok := j.groups[groupID]
 	if !ok {
-		return NewGroupNotFoundError(groupID)
+		return groupNotFoundError{id: groupID}
 	}
 	i := 0
 	for _, flag := range d.Flags {
@@ -185,7 +185,7 @@ func (j *JSON) Save() error {
 	j.m.RLock()
 	defer j.m.RUnlock()
 	if j.readOnly {
-		return ReadOnlyError{}
+		return readOnlyError{}
 	}
 
 	switch t := j.file.(type) {

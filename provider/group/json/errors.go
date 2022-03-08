@@ -4,28 +4,20 @@ import (
 	"fmt"
 )
 
-var _ error = (*GroupNotFoundError)(nil)
+var _ error = (*groupNotFoundError)(nil)
 
-type GroupNotFoundError struct {
+type groupNotFoundError struct {
 	id string
 }
 
-func NewGroupNotFoundError(id string) GroupNotFoundError {
-	return GroupNotFoundError{id: id}
-}
-
-func (e GroupNotFoundError) Error() string {
+func (e groupNotFoundError) Error() string {
 	return fmt.Sprintf("group ID \"%s\" cant be found", e.id)
 }
 
-func (e GroupNotFoundError) ID() string {
-	return e.id
-}
+var _ error = (*readOnlyError)(nil)
 
-var _ error = (*ReadOnlyError)(nil)
+type readOnlyError struct{}
 
-type ReadOnlyError struct{}
-
-func (e ReadOnlyError) Error() string {
+func (e readOnlyError) Error() string {
 	return "provider is set to readonly mode"
 }
