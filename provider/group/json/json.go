@@ -11,8 +11,7 @@ import (
 var _ provider.Provider = (*JSON)(nil)
 
 type JSON struct {
-	groups      map[string]*groupData
-	groupsOrder []string
+	groups map[string]*groupData
 	//file is where the data will be read and written to
 	//io.Closer is supported and will be closed when JSON.Close is called
 	file io.ReadWriter
@@ -69,11 +68,9 @@ func (j *JSON) SetGroup(groupID string, group roller.Group) error {
 		return readOnlyError{}
 	}
 	j.groups[groupID] = &groupData{
-		Flags:      nil,
-		FlagsOrder: nil,
-		Group:      group,
+		Flags: nil,
+		Group: group,
 	}
-	j.updateOrder(groupID, true)
 	return nil
 }
 
@@ -84,7 +81,6 @@ func (j *JSON) RemoveGroup(id string) error {
 		return readOnlyError{}
 	}
 	delete(j.groups, id)
-	j.updateOrder(id, false)
 	return nil
 }
 
@@ -103,7 +99,6 @@ func (j *JSON) SetFlag(groupID string, flagID string, flag roller.FlagEntry) err
 	}
 
 	d.Flags[flagID] = flag
-	d.updateOrder(flagID, true)
 	return nil
 }
 
@@ -118,7 +113,6 @@ func (j *JSON) RemoveFlag(groupID string, flagID string) error {
 		return groupNotFoundError{id: groupID}
 	}
 	delete(d.Flags, flagID)
-	d.updateOrder(flagID, false)
 	return nil
 }
 
@@ -175,7 +169,6 @@ func (j *JSON) load() error {
 	if err := dec.Decode(&load); err != nil {
 		return err
 	}
-	j.groupsOrder = load.GroupsOrder
 	j.groups = load.Groups
 
 	return nil
@@ -206,7 +199,6 @@ func (j *JSON) Save() error {
 
 	var save groupDataSave
 
-	save.GroupsOrder = j.groupsOrder
 	save.Groups = j.groups
 
 	if err := enc.Encode(save); err != nil {
@@ -223,39 +215,9 @@ func (j *JSON) Close() error {
 	return nil
 }
 
-//updateOrder adds new groupID into JSON.groupsOrder, does nothing if groupID already exists
-func (j *JSON) updateOrder(groupID string, add bool) {
-	for i, id := range j.groupsOrder {
-		if id == groupID {
-			if !add {
-				j.groupsOrder = append(j.groupsOrder[:i], j.groupsOrder[i+1:]...)
-			}
-			return
-		}
-	}
-	if add {
-		j.groupsOrder = append(j.groupsOrder, groupID)
-	}
-}
-
 type groupData struct {
-	Flags      map[string]roller.FlagEntry `json:"flags,omitempty"`
-	FlagsOrder []string                    `json:"flags_order,omitempty"`
+	Flags map[string]roller.FlagEntry `json:"flags,omitempty"`
 	roller.Group
-}
-
-func (g *groupData) updateOrder(flagID string, add bool) {
-	for i, id := range g.FlagsOrder {
-		if id == flagID {
-			if !add {
-				g.FlagsOrder = append(g.FlagsOrder[:i], g.FlagsOrder[i+1:]...)
-			}
-			return
-		}
-	}
-	if add {
-		g.FlagsOrder = append(g.FlagsOrder, flagID)
-	}
 }
 
 //groupDataSave is the json save structure
