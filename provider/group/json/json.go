@@ -24,16 +24,11 @@ type JSON struct {
 	m      sync.RWMutex
 }
 
-func NewJSON(file io.ReadWriter) (*JSON, error) { //todo option pattern
+func NewJSON(file io.ReadWriter, options ...Option) (*JSON, error) {
 	j := &JSON{file: file, indent: "\t", groups: make(map[string]*groupData)}
-	if err := j.load(); err != nil {
-		return nil, err
+	for _, option := range options {
+		option(j)
 	}
-	return j, nil
-}
-
-func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string) (*JSON, error) {
-	j := &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent}
 	if err := j.load(); err != nil {
 		return nil, err
 	}
