@@ -1,13 +1,14 @@
-package provider
+package json
 
 import (
 	"encoding/json"
 	"github.com/Thunder33345/roller"
+	"github.com/Thunder33345/roller/provider"
 	"io"
 	"sync"
 )
 
-var _ Provider = (*JSON)(nil)
+var _ provider.Provider = (*JSON)(nil)
 
 type JSON struct {
 	groups      map[string]*groupData

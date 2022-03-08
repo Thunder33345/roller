@@ -2,7 +2,6 @@ package provider
 
 import (
 	"github.com/Thunder33345/roller"
-	"io"
 )
 
 var _ roller.GroupProvider = (Provider)(nil)
@@ -33,18 +32,4 @@ type Walker interface {
 	//if the function returns halt as true, it will stop further iteration
 	WalkGroups(func(group roller.Group, last bool) (halt bool)) error
 	WalkFlags(roller.Group, func(Flag roller.FlagEntry, last bool) (halt bool)) error
-}
-
-//truncateSeeker is an io.ReadWriter that can be seeked and truncated
-//internally used for compat on JSON.Save where Truncate(0) and Seek(0,0) will be called before writing
-type truncateSeeker interface {
-	Truncate(size int64) error
-	io.Seeker
-	io.ReadWriter
-}
-
-//reseter is an io.ReadWriter that can be reset before being written to, used for JSON.Save
-type reseter interface {
-	Reset()
-	io.ReadWriter
 }
