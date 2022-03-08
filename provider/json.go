@@ -7,10 +7,11 @@ import (
 	"sync"
 )
 
-var _ GroupStorer = (*JSON)(nil)
+var _ Provider = (*JSON)(nil)
 
 type JSON struct {
-	groups []roller.Group
+	groups      map[string]*groupData
+	groupsOrder []string
 	//file is where the data will be read and written to
 	//io.Closer is supported and will be closed when JSON.Close is called
 	file io.ReadWriter
@@ -20,50 +21,58 @@ type JSON struct {
 	readOnly bool
 	//indent is the key to use when writing out
 	indent string
-	//unsafeSave suppresses duplicate uid check when saving
-	//will still push the error down to next load
-	unsafeSave bool
-	m          sync.RWMutex
+	m      sync.RWMutex
 }
 
-func NewJSON(file io.ReadWriter) (*JSON, error) {
-	j := &JSON{file: file, indent: "\t"}
+func NewJSON(file io.ReadWriter) (*JSON, error) { //todo option pattern
+	j := &JSON{file: file, indent: "\t", groups: make(map[string]*groupData)}
 	if err := j.load(); err != nil {
 		return nil, err
 	}
 	return j, nil
 }
 
-func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string, unsafeSave bool) (*JSON, error) {
-	j := &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent, unsafeSave: unsafeSave}
+func NewJSONWithOptions(file io.ReadWriter, allowUnknown bool, readOnly bool, indent string) (*JSON, error) {
+	j := &JSON{file: file, allowUnknown: allowUnknown, readOnly: readOnly, indent: indent}
 	if err := j.load(); err != nil {
 		return nil, err
 	}
 	return j, nil
 }
 
-func (j *JSON) Group(id string) (roller.Group, error) {
+func (j *JSON) Group(groupID string) (roller.Group, error) {
 	j.m.RLock()
 	defer j.m.RUnlock()
-	i, g := j.findGroup(id)
-	if i >= 0 {
-		return g, nil
+	d, ok := j.groups[groupID]
+	if ok {
+		return d.Group, nil
 	}
-	return roller.Group{}, NewGroupNotFoundError(id)
+	return roller.Group{}, NewGroupNotFoundError(groupID)
 }
 
-func (j *JSON) AddGroup(group roller.Group) error {
+func (j *JSON) Flag(gid string, fid string) (roller.FlagEntry, bool, error) {
+	j.m.RLock()
+	defer j.m.Unlock()
+	d, ok := j.groups[gid]
+	if !ok {
+		return roller.FlagEntry{}, false, NewGroupNotFoundError(gid)
+	}
+	f, ok := d.Flags[fid]
+	return f, ok, nil
+}
+
+func (j *JSON) SetGroup(groupID string, group roller.Group) error {
 	j.m.Lock()
 	defer j.m.Unlock()
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
-	i, _ := j.findGroup(group.ID)
-	if i >= 0 {
-		j.groups[i] = group
-		return nil
+	j.groups[groupID] = &groupData{
+		Flags:      nil,
+		FlagsOrder: nil,
+		Group:      group,
 	}
-	j.groups = append(j.groups, group)
+	j.updateOrder(groupID, true)
 	return nil
 }
 
@@ -73,19 +82,70 @@ func (j *JSON) RemoveGroup(id string) error {
 	if j.readOnly {
 		return ReadOnlyError{}
 	}
-	i, _ := j.findGroup(id)
-	if i >= 0 {
-		j.groups = append(j.groups[:i], j.groups[i+1:]...)
-		return nil
+	delete(j.groups, id)
+	j.updateOrder(id, false)
+	return nil
+}
+
+func (j *JSON) SetFlag(groupID string, flagID string, flag roller.FlagEntry) error {
+	j.m.Lock()
+	defer j.m.Unlock()
+	if j.readOnly {
+		return ReadOnlyError{}
 	}
-	return NewGroupNotFoundError(id)
+	d, ok := j.groups[groupID]
+	if !ok {
+		return NewGroupNotFoundError(groupID)
+	}
+	if d.Flags == nil {
+		d.Flags = make(map[string]roller.FlagEntry)
+	}
+
+	d.Flags[flagID] = flag
+	d.updateOrder(flagID, true)
+	return nil
+}
+
+func (j *JSON) RemoveFlag(groupID string, flagID string) error {
+	j.m.Lock()
+	defer j.m.Unlock()
+	if j.readOnly {
+		return ReadOnlyError{}
+	}
+	d, ok := j.groups[groupID]
+	if !ok {
+		return NewGroupNotFoundError(groupID)
+	}
+	delete(d.Flags, flagID)
+	d.updateOrder(flagID, false)
+	return nil
 }
 
 func (j *JSON) WalkGroup(f func(group roller.Group, last bool) (halt bool)) error {
 	j.m.RLock()
 	defer j.m.RUnlock()
-	for i, g := range j.groups {
-		halt := f(g, len(j.groups)-1 == i)
+	i := 0
+	for _, g := range j.groups {
+		i++
+		halt := f(g.Group, i >= len(j.groups))
+		if halt {
+			return nil
+		}
+	}
+	return nil
+}
+
+func (j *JSON) WalkFlags(groupID string, f func(flag roller.FlagEntry, last bool) (halt bool)) error {
+	j.m.RLock()
+	defer j.m.RUnlock()
+	d, ok := j.groups[groupID]
+	if !ok {
+		return NewGroupNotFoundError(groupID)
+	}
+	i := 0
+	for _, flag := range d.Flags {
+		i++
+		halt := f(flag, i >= len(d.Flags))
 		if halt {
 			return nil
 		}
@@ -110,27 +170,13 @@ func (j *JSON) load() error {
 		return nil
 	}
 
-	var tg []roller.Group
-	if err := dec.Decode(&tg); err != nil {
+	var load groupDataSave
+	if err := dec.Decode(&load); err != nil {
 		return err
 	}
-	if err := j.duplicateCheck(tg); err != nil {
-		return err
-	}
-	j.groups = tg
-	return nil
-}
+	j.groupsOrder = load.GroupsOrder
+	j.groups = load.Groups
 
-func (j *JSON) Reload() error {
-	j.m.Lock()
-	defer j.m.Unlock()
-	c := j.groups
-	j.groups = nil
-	err := j.load()
-	if err != nil {
-		j.groups = c
-		return err
-	}
 	return nil
 }
 
@@ -139,9 +185,6 @@ func (j *JSON) Save() error {
 	defer j.m.RUnlock()
 	if j.readOnly {
 		return ReadOnlyError{}
-	}
-	if err := j.duplicateCheck(j.groups); err != nil && !j.unsafeSave {
-		return err
 	}
 
 	switch t := j.file.(type) {
@@ -160,7 +203,12 @@ func (j *JSON) Save() error {
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", j.indent)
 
-	if err := enc.Encode(j.groups); err != nil {
+	var save groupDataSave
+
+	save.GroupsOrder = j.groupsOrder
+	save.Groups = j.groups
+
+	if err := enc.Encode(save); err != nil {
 		return err
 	}
 	return nil
@@ -174,24 +222,44 @@ func (j *JSON) Close() error {
 	return nil
 }
 
-func (j *JSON) findGroup(id string) (int, roller.Group) {
-	for i, g := range j.groups {
-		if g.ID == id {
-			return i, g
+//updateOrder adds new groupID into JSON.groupsOrder, does nothing if groupID already exists
+func (j *JSON) updateOrder(groupID string, add bool) {
+	for i, id := range j.groupsOrder {
+		if id == groupID {
+			if !add {
+				j.groupsOrder = append(j.groupsOrder[:i], j.groupsOrder[i+1:]...)
+			}
+			return
 		}
 	}
-	return -1, roller.Group{}
+	if add {
+		j.groupsOrder = append(j.groupsOrder, groupID)
+	}
 }
 
-func (j *JSON) duplicateCheck(groups []roller.Group) error {
-	found := make(map[string]int, len(groups))
-	for i, g := range groups {
-		di, exist := found[g.ID]
-		if exist {
-			og := groups[di]
-			return NewDuplicateIDError(og, g)
+type groupData struct {
+	Flags      map[string]roller.FlagEntry `json:"flags,omitempty"`
+	FlagsOrder []string                    `json:"flags_order,omitempty"`
+	roller.Group
+}
+
+func (g *groupData) updateOrder(flagID string, add bool) {
+	for i, id := range g.FlagsOrder {
+		if id == flagID {
+			if !add {
+				g.FlagsOrder = append(g.FlagsOrder[:i], g.FlagsOrder[i+1:]...)
+			}
+			return
 		}
-		found[g.ID] = i
 	}
-	return nil
+	if add {
+		g.FlagsOrder = append(g.FlagsOrder, flagID)
+	}
+}
+
+//groupDataSave is the json save structure
+//todo make a proper ordered save system
+type groupDataSave struct {
+	Groups      map[string]*groupData `json:"groups,omitempty"`
+	GroupsOrder []string              `json:"groups_order,omitempty"`
 }
