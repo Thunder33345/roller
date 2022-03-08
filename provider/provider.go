@@ -13,6 +13,10 @@ type Provider interface {
 	RemoveGroup(groupID string) error
 	SetFlag(groupID string, flagID string, flag roller.FlagEntry) error
 	RemoveFlag(groupID string, flagID string) error
+}
+
+type Saver interface {
+	Provider
 	Save() error
 }
 
