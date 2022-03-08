@@ -24,7 +24,7 @@ type JSON struct {
 	m      sync.RWMutex
 }
 
-func NewJSON(file io.ReadWriter, options ...Option) (*JSON, error) {
+func New(file io.ReadWriter, options ...Option) (*JSON, error) {
 	j := &JSON{file: file, indent: "\t", groups: make(map[string]*groupData)}
 	for _, option := range options {
 		option(j)
