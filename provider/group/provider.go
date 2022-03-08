@@ -1,4 +1,4 @@
-package provider
+package group
 
 import (
 	"github.com/Thunder33345/roller"
